@@ -1,0 +1,11 @@
+services:
+  backend:
+    build:
+      context: .
+    volumes:
+      - type: bind
+        source: ./code
+        target: /base/code
+      - type: bind
+        source: $WM_DIR
+        target: /base/data

@@ -11,6 +11,7 @@ def check_path(path):
     if not os.path.isdir(path):
         os.mkdir(path)
 
+
 def correct_vocab(model_folder):
     """Utility function to trim down the vocabulary of the KeyedVectors
     to that from the CountVectorizer """
@@ -30,6 +31,7 @@ def correct_vocab(model_folder):
         out_vocab_text = '{}_vocab.txt'.format(name_scheme)
         with open(out_vocab_text, 'w+') as f:
             f.writelines(out_vocab)
+
 
 def sentences_to_lowercase(input_folder, output_folder):
     old_files = glob('{}/*.pkl'.format(input_folder))
@@ -70,3 +72,12 @@ def source_data_to_file(input_file):
         for sen in sentences:
             f.write(' '.join(sen) + '\n')
     return 'done'
+
+
+def word2vec_to_keyed_vectors(input_file, output_path):
+    ''' given a file saved in word2vec format,
+    export it to KeyedVectors format
+    '''
+    model = KeyedVectors.load_word2vec_format(input_file, binary=True)
+    output_file = join(output_path, splitext(basename(input_file))[0]+'.wv')
+    model.save(output_file)
