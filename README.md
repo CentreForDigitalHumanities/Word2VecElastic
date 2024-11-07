@@ -12,13 +12,6 @@ The code was tested in Python 3.8. Create a virtualenv (`python -m venv your_env
 pip install -r requirements.txt
 ```
 
-## NLTK stopwords
-Download the NLTK stopword list as follows: with activated environment, log into the Python shell. Then run
-```
-import nltk
-nltk.download('stopwords')
-```
-
 ## SpaCy language models
 With activated environment, download the SpaCy language models required for preprocessing as follows:
 ```
