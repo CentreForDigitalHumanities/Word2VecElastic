@@ -1,4 +1,5 @@
 [![DOI](https://zenodo.org/badge/171899269.svg)](https://zenodo.org/badge/latestdoi/171899269)
+
 # Word2VecElastic
 This repository includes utility functions to build diachronic Word2Vec models in gensim, using an Elasticsearch index to collect the data, and SpaCy and NLTK to preprocess it.
 
@@ -7,7 +8,25 @@ The data is read in year batches from Elasticsearch and preprocessed. Every year
 For the whole time period, a full model will be generated, which will be used as pre-training data for the individual models. Alternatively, independent models can be trained by setting the `-in` flag (see #Usage)
 
 # Prerequisites
-The code was tested in Python 3.8. Create a virtualenv (`python -m venv your_env_name`), activate it (`source your_env_name/bin/activate`) and the run
+
+## Elasticsearch
+The data is fetched from Elasticsearch. By default, this will attempt to fetch from a local instance (i.e., `localhost:9200`) For local development, install [Elasticsearch](https://www.elastic.co/guide/en/elasticsearch/reference/current/install-elasticsearch.html).
+
+In order to fetch data from a remote Elasticsearch cluster and/or on a different port, set environment variables. For instance, to fetch from `http://url-of-your-cluster:9900`, you would set:
+```bash
+export ES_HOST=http://url-of-your-cluster
+export ES_PORT=9900
+```
+
+To connect to your remote cluster through SSL(recommended), you will also need to set the following variables:
+```bash
+export API_ID=asdfgjkl
+export API_KEY=zxvnmnl
+export CERTS_LOCATION=/path/to/ca-bundle.crt
+```
+
+## Python
+The code was tested in Python 3.9. Create a virtualenv (`python -m venv your_env_name`), activate it (`source your_env_name/bin/activate`) and the run
 ```
 pip install -r requirements.txt
 ```

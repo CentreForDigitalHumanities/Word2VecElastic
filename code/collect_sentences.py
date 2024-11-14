@@ -11,11 +11,8 @@ from util import check_path
 import logging
 logger = logging.getLogger(__name__)
 
-try:
-    from config import ES_HOST, ES_PORT
-except:
-    ES_HOST = 'localhost'
-    ES_PORT = 9200
+ES_HOST = os.environ.get("ES_HOST", "localhost")
+ES_PORT = os.environ.get("ES_PORT", 9200)
 
 node = {'host': ES_HOST,
         'port': ES_PORT,
@@ -26,14 +23,16 @@ kwargs = {
     'timeout': 180
 }
 
-try:
-    from config import API_ID, API_KEY, CERTS_LOCATION
+API_ID = os.environ.get("API_ID", None)
+API_KEY = os.environ.get("API_KEY", None)
+CERTS_LOCATION = os.environ.get("CERTS_LOCATION")
+if API_ID and API_KEY and CERTS_LOCATION:
     node['scheme'] = 'https'
     kwargs['ca_certs'] = CERTS_LOCATION
     kwargs['api_key'] = (API_ID, API_KEY)
-except:
+else:
     node['scheme'] = 'http'
-      
+
 es = Elasticsearch([node], **kwargs)
 
 
@@ -67,17 +66,17 @@ class DataCollector():
     def __iter__(self):
         self.set_generator_function()
         return self
-        
+
     def __next__(self):
         result = next(self.generator)
         if result is None:
             raise StopIteration
         else:
             return result
-    
+
     def set_generator_function(self):
         self.generator = self.get_sentences()
-    
+
     def get_sentences(self):
         for year in range(self.start_year, self.end_year):
             filename = self.get_pickle_filename(year)
@@ -98,7 +97,7 @@ class DataCollector():
                         analyzed = self.analyzer(sentence)
                         pickle.dump(analyzed, text_file)
                         yield analyzed
-    
+
     def get_pickle_filename(self, year):
         check_path(self.source_directory)
         return os.path.join(self.source_directory, '{}-{}.pkl'.format(self.index, year))
@@ -116,7 +115,7 @@ class DataCollector():
             if doc_tok:
                 sentences.extend(doc_tok)
         return sentences
-    
+
     def get_documents_for_year(self, year):
         '''Retrieves a list of documents for a year specified.'''
         min_date = str(year)+"-01-01"
@@ -125,17 +124,22 @@ class DataCollector():
         docs = None
         for retry in range(10):
             try:
-               docs = es.search(index=self.index, body=search_body, size=1000, scroll="60m", track_total_hits=True)
+                docs = es.search(
+                    index=self.index,
+                    body=search_body,
+                    size=1000,
+                    scroll="60m",
+                    track_total_hits=True,
+                )
             except Exception as e:
                 logger.warning(e)
                 time.sleep(10)
         if not docs:
-            es.clear_scroll(scroll_id='_all')
             return None
         content = [result['_source'][self.field] for result in docs['hits']['hits']]
         total_hits = docs['hits']['total']['value']
         if total_hits == 0:
-            es.clear_scroll(scroll_id='_all')
+            es.clear_scroll(scroll_id=docs['_scroll_id'])
             return None
         scroll_id = docs['_scroll_id']
         while len(content)<total_hits:
