@@ -27,42 +27,124 @@ MIN_COUNT = 80
 N_DIMS = 100
 WINDOW_SIZE = 5
 
+
 @click.command()
-@click.option('-i', '--index', help="Elasticsearch index name from which to request the training data", required=True)
-@click.option('-s', '--start_year', help="Year from which to start training", type=int, required=True)
-@click.option('-e', '--end_year', help="Year until which to continue training", type=int, required=True)
-@click.option('-n', '--n_years', help="Number of years each model should span", type=int, default=10)
+@click.option(
+    '-i',
+    '--index',
+    help="Elasticsearch index name from which to request the training data",
+    required=True,
+)
+@click.option(
+    '-s',
+    '--start_year',
+    help="Year from which to start training",
+    type=int,
+    required=True,
+)
+@click.option(
+    '-e',
+    '--end_year',
+    help="Year until which to continue training",
+    type=int,
+    required=True,
+)
+@click.option(
+    '-n',
+    '--n_years',
+    help="Number of years each model should span",
+    type=int,
+    default=10,
+)
 @click.option('-sh', '--shift_years', help="Shift between models", type=int, default=5)
-@click.option('-md', '--model_directory', help="Directory in which the models should be saved", required=True)
-@click.option('-sd', '--source_directory', help="Directory in which the source data should be saved", default='source_data')
-@click.option('-f', '--field', help="Field from which to extract training data", default='content')
-@click.option('-d', '--date_field', help="Field on which to filter dates for training data", default='date')
-@click.option('-l', '--language', help="Language of the training data", default='english')
-@click.option('-lem', '--lemmatize', help="Whether or not to perform lemmatization", default=False, is_flag=True)
-@click.option('-mc', '--min_count', help="Minimum count of a given word to be included in a model", type=int, default=MIN_COUNT)
-@click.option('-vs', '--vector_size', help="The size of the embedding vectors", type=int, default=N_DIMS)
-@click.option('-ws', '--window_size', help="The size of the window considered for embeddings", type=int, default=WINDOW_SIZE)
-@click.option('-mv', '--max_vocab_size', help="Limit the size of the vocab, i.e., prune", type=int)
-@click.option('-in', '--independent', help="Train models which don't depend on data from other time slices", default=False, is_flag=True)
-@click.option('-a', '--algorithm', help="Which training algorithm to use", default='word2vec')
+@click.option(
+    '-md',
+    '--model_directory',
+    help="Directory in which the models should be saved",
+    required=True,
+)
+@click.option(
+    '-sd',
+    '--source_directory',
+    help="Directory in which the source data should be saved",
+    default='source_data',
+)
+@click.option(
+    '-f', '--field', help="Field from which to extract training data", default='content'
+)
+@click.option(
+    '-d',
+    '--date_field',
+    help="Field on which to filter dates for training data",
+    default='date',
+)
+@click.option(
+    '-q', '--query', help="Terms query with which to filter training data", default=None
+)
+@click.option(
+    '-l', '--language', help="Language of the training data", default='english'
+)
+@click.option(
+    '-lem',
+    '--lemmatize',
+    help="Whether or not to perform lemmatization",
+    default=False,
+    is_flag=True,
+)
+@click.option(
+    '-mc',
+    '--min_count',
+    help="Minimum count of a given word to be included in a model",
+    type=int,
+    default=MIN_COUNT,
+)
+@click.option(
+    '-vs',
+    '--vector_size',
+    help="The size of the embedding vectors",
+    type=int,
+    default=N_DIMS,
+)
+@click.option(
+    '-ws',
+    '--window_size',
+    help="The size of the window considered for embeddings",
+    type=int,
+    default=WINDOW_SIZE,
+)
+@click.option(
+    '-mv', '--max_vocab_size', help="Limit the size of the vocab, i.e., prune", type=int
+)
+@click.option(
+    '-in',
+    '--independent',
+    help="Train models which don't depend on data from other time slices",
+    default=False,
+    is_flag=True,
+)
+@click.option(
+    '-a', '--algorithm', help="Which training algorithm to use", default='word2vec'
+)
 def generate_models(
-        index,
-        start_year,
-        end_year,
-        n_years,
-        shift_years,
-        model_directory,
-        source_directory,
-        field,
-        date_field,
-        language,
-        lemmatize,
-        min_count,
-        vector_size,
-        window_size,
-        max_vocab_size,
-        independent,
-        algorithm):
+    index,
+    start_year,
+    end_year,
+    n_years,
+    shift_years,
+    model_directory,
+    source_directory,
+    field,
+    date_field,
+    query,
+    language,
+    lemmatize,
+    min_count,
+    vector_size,
+    window_size,
+    max_vocab_size,
+    independent,
+    algorithm,
+):
     """Generate time shifting w2v models on the given time range (start_year - end_year).
     Each model contains the specified number of years (years_in_model). The start
     year of each new model is set to be shift_years after the previous model.
@@ -79,7 +161,16 @@ def generate_models(
     """
     check_path(model_directory)
     analyzer = Analyzer(language, lemmatize).preprocess
-    sentences = DataCollector(index, start_year, end_year, analyzer, field, date_field, source_directory)
+    sentences = DataCollector(
+        index,
+        start_year,
+        end_year,
+        analyzer,
+        field,
+        date_field,
+        source_directory,
+        query,
+    )
     full_model_name = '{}_{}_{}_full'.format(index, start_year, end_year)
     full_model_file =  '{}.model'.format(full_model_name)
     if not os.path.exists(join(model_directory, full_model_file)) and not independent:
@@ -139,7 +230,7 @@ def generate_models(
             'n_tokens': n_tokens,
             'n_terms': n_terms})
         saved_vectors.save(join(model_directory, model_name))
-        
+
     with open(join(model_directory, '{}_stats.csv'.format(full_model_name)), 'w+') as f:
         writer = csv.DictWriter(f, fieldnames=('time', 'n_tokens', 'n_terms'))
         writer.writeheader()

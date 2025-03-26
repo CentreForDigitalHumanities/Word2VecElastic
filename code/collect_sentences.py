@@ -52,7 +52,17 @@ class DataCollector():
     - field: field from which to collect data
     - source_directory: directory in which source data is saved
     '''
-    def __init__(self, index, start_year, end_year, analyzer, field, date_field, source_directory):
+    def __init__(
+        self,
+        index,
+        start_year,
+        end_year,
+        analyzer,
+        field,
+        date_field,
+        source_directory,
+        extra_query=None,
+    ):
         self.index = index
         self.start_year = start_year
         self.end_year = end_year
