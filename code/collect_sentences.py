@@ -68,7 +68,7 @@ class DataCollector():
         self.end_year = end_year
         self.field = field
         self.date_field = date_field
-        self.extra_filter = None # None for now, could be used for e.g. removing newspaper adverts
+        self.extra_filter = extra_query  # None for now, could be used for e.g. removing newspaper adverts
         self.generator = self.set_generator_function()
         self.analyzer = analyzer
         self.source_directory = source_directory
