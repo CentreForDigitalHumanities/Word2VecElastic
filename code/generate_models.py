@@ -16,7 +16,7 @@ from sklearn.feature_extraction.text import CountVectorizer
 from collect_sentences import DataCollector
 from corpus_config import CORPUS_CONFIGURATIONS
 from analyzer import Analyzer
-from util import check_path
+from util import check_path, CorpusConfigurationException
 import ppmi
 
 import logging
@@ -92,6 +92,10 @@ def generate_models(
     """
     check_path(model_directory)
     corpus_config = CORPUS_CONFIGURATIONS.get(corpus)
+    if not corpus_config:
+        raise CorpusConfigurationException(
+            "The corpus configuration should specify `corpus`, i.e., the name of the corpus configuration object"
+        )
     analyzer = Analyzer(corpus_config).preprocess
     algorithm = corpus_config.get('algorithm', 'word2vec')
     independent = corpus_config.get('independent')
