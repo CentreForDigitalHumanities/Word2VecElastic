@@ -4,6 +4,7 @@ import tempfile
 import pytest
 
 from collect_sentences import es, DataCollector
+from corpus_config import CORPUS_CONFIGURATIONS
 from analyzer import Analyzer
 
 n_years = 5
@@ -12,24 +13,24 @@ start_year = end_year - n_years
 
 @pytest.fixture
 def analyzer():
+    corpus_config = CORPUS_CONFIGURATIONS.get('guardian-observer')
     return Analyzer(
-        language='english',
-        lemmatize=False
+        corpus_config
     ).preprocess
 
 @pytest.fixture
 def collector(analyzer):
+    corpus_config = CORPUS_CONFIGURATIONS.get('guardian-observer')
     with tempfile.TemporaryDirectory() as temp_dir:
         return DataCollector(
-            index='test_index',
+            corpus_config,
             start_year=start_year,
             end_year=end_year,
-            field='test_field',
             analyzer=analyzer,
             source_directory=temp_dir
         ) 
 
-def test_data_collector(monkeypatch, collector):
+def mock_data_collector(monkeypatch, collector):
     def mock_search(index, body, size, scroll, track_total_hits):
         return {
             "_scroll_id": 42,

@@ -1,7 +1,11 @@
 from analyzer import Analyzer
+from corpus_config import CORPUS_CONFIGURATIONS
+
+test_corpus_config = CORPUS_CONFIGURATIONS.get('parliament-uk')
 
 def test_data_analyzer():
-    analyzer = Analyzer('english', True).preprocess
+    test_corpus_config['lemmatize'] = True
+    analyzer = Analyzer(test_corpus_config).preprocess
     test_sentence = "What I'm saying is -- the U.K. have a neo-liberalist government!"
     output = analyzer(test_sentence)
     assert "neo-liberalist" in output
@@ -10,7 +14,8 @@ def test_data_analyzer():
     assert None not in output
 
 def test_hyphen_merge():
-    analyzer = Analyzer('english', True).preprocess
+    test_corpus_config['lemmatize'] = True
+    analyzer = Analyzer(test_corpus_config).preprocess
     test_sentence = 'The UK government are on the non-exciting but dangerous road of e-democracy.'
     output = analyzer(test_sentence)
     assert "non-exciting" in output
@@ -18,7 +23,7 @@ def test_hyphen_merge():
     assert len(output) == 6
 
 def test_hyphen_exception():
-    analyzer = Analyzer('english', False).preprocess
+    analyzer = Analyzer(test_corpus_config).preprocess
     test_sentence = 'Our post offices are always open.'
     output = analyzer(test_sentence)
     assert len(output) == 3
@@ -31,7 +36,7 @@ def test_hyphen_exception():
     assert 'anti-war' in output
 
 def test_end_of_string():
-    analyzer = Analyzer('english', False).preprocess
+    analyzer = Analyzer(test_corpus_config).preprocess
     test_sentence = 'Most commerce is currently e'
     output = analyzer(test_sentence)
     assert 'e' in output

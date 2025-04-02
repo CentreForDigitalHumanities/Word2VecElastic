@@ -14,6 +14,7 @@ from gensim.test.utils import get_tmpfile
 from sklearn.feature_extraction.text import CountVectorizer
 
 from collect_sentences import DataCollector
+from corpus_config import CORPUS_CONFIGURATIONS
 from analyzer import Analyzer
 from util import check_path
 import ppmi
@@ -27,42 +28,54 @@ MIN_COUNT = 80
 N_DIMS = 100
 WINDOW_SIZE = 5
 
+
 @click.command()
-@click.option('-i', '--index', help="Elasticsearch index name from which to request the training data", required=True)
-@click.option('-s', '--start_year', help="Year from which to start training", type=int, required=True)
-@click.option('-e', '--end_year', help="Year until which to continue training", type=int, required=True)
-@click.option('-n', '--n_years', help="Number of years each model should span", type=int, default=10)
+@click.option(
+    '-c', '--corpus', help="Name of the corpus configuration object", required=True
+)
+@click.option(
+    '-s',
+    '--start_year',
+    help="Year from which to start training",
+    type=int,
+    required=True,
+)
+@click.option(
+    '-e',
+    '--end_year',
+    help="Year until which to continue training",
+    type=int,
+    required=True,
+)
+@click.option(
+    '-n',
+    '--n_years',
+    help="Number of years each model should span",
+    type=int,
+    default=10,
+)
 @click.option('-sh', '--shift_years', help="Shift between models", type=int, default=5)
-@click.option('-md', '--model_directory', help="Directory in which the models should be saved", required=True)
-@click.option('-sd', '--source_directory', help="Directory in which the source data should be saved", default='source_data')
-@click.option('-f', '--field', help="Field from which to extract training data", default='content')
-@click.option('-d', '--date_field', help="Field on which to filter dates for training data", default='date')
-@click.option('-l', '--language', help="Language of the training data", default='english')
-@click.option('-lem', '--lemmatize', help="Whether or not to perform lemmatization", default=False, is_flag=True)
-@click.option('-mc', '--min_count', help="Minimum count of a given word to be included in a model", type=int, default=MIN_COUNT)
-@click.option('-vs', '--vector_size', help="The size of the embedding vectors", type=int, default=N_DIMS)
-@click.option('-ws', '--window_size', help="The size of the window considered for embeddings", type=int, default=WINDOW_SIZE)
-@click.option('-mv', '--max_vocab_size', help="Limit the size of the vocab, i.e., prune", type=int)
-@click.option('-in', '--independent', help="Train models which don't depend on data from other time slices", default=False, is_flag=True)
-@click.option('-a', '--algorithm', help="Which training algorithm to use", default='word2vec')
+@click.option(
+    '-md',
+    '--model_directory',
+    help="Directory in which the models should be saved",
+    required=True,
+)
+@click.option(
+    '-sd',
+    '--source_directory',
+    help="Directory in which the source data should be saved",
+    default='source_data',
+)
 def generate_models(
-        index,
-        start_year,
-        end_year,
-        n_years,
-        shift_years,
-        model_directory,
-        source_directory,
-        field,
-        date_field,
-        language,
-        lemmatize,
-        min_count,
-        vector_size,
-        window_size,
-        max_vocab_size,
-        independent,
-        algorithm):
+    corpus,
+    start_year,
+    end_year,
+    n_years,
+    shift_years,
+    model_directory,
+    source_directory,
+):
     """Generate time shifting w2v models on the given time range (start_year - end_year).
     Each model contains the specified number of years (years_in_model). The start
     year of each new model is set to be shift_years after the previous model.
@@ -78,25 +91,32 @@ def generate_models(
     The statistics are saved to the model folder as a .csv
     """
     check_path(model_directory)
-    analyzer = Analyzer(language, lemmatize).preprocess
-    sentences = DataCollector(index, start_year, end_year, analyzer, field, date_field, source_directory)
-    full_model_name = '{}_{}_{}_full'.format(index, start_year, end_year)
+    corpus_config = CORPUS_CONFIGURATIONS.get(corpus)
+    analyzer = Analyzer(corpus_config).preprocess
+    algorithm = corpus_config.get('algorithm', 'word2vec')
+    independent = corpus_config.get('independent')
+    sentences = DataCollector(
+        corpus_config, start_year, end_year, analyzer, source_directory
+    )
+    full_model_name = '{}_{}_{}_full'.format(corpus, start_year, end_year)
     full_model_file =  '{}.model'.format(full_model_name)
     if not os.path.exists(join(model_directory, full_model_file)) and not independent:
         # skip this step when training independent models
         if algorithm == 'word2vec':
             model = get_model(
                 sentences,
-                min_count,
-                window_size,
-                vector_size,
-                max_vocab_size
+                corpus_config.get('min_count', MIN_COUNT),
+                corpus_config.get('window_size', WINDOW_SIZE),
+                corpus_config.get('vector_size', N_DIMS),
+                corpus_config.get('max_vocab_size'),
             )
             model.train(sentences, total_examples=model.corpus_count,
                         epochs=model.epochs)
             model.save(join(model_directory, full_model_file))
         elif algorithm == 'ppmi':
-            model = train_ppmi(list(sentences), vector_size)
+            model = train_ppmi(
+                list(sentences), corpus_config.get('vector_size', N_DIMS)
+            )
         else:
             logger.error(
                 'unknown training algorithm specified, choose `word2vec` or `ppmi`')
@@ -109,24 +129,26 @@ def generate_models(
     for year in range(start_year, end_year - n_years + 1, shift_years):
         start = year
         end = year + n_years
-        model_name = '{}_{}_{}.wv'.format(index, start, end)
+        model_name = '{}_{}_{}.wv'.format(corpus, start, end)
         logger.info('Building model: '+ model_name)
-        sentences = DataCollector(index, start, end, analyzer, field, date_field, source_directory)
+        sentences = DataCollector(corpus_config, start, end, analyzer, source_directory)
         if algorithm == 'word2vec':
             if independent:
                 model = get_model(
                     sentences,
-                    min_count,
-                    window_size,
-                    vector_size,
-                    max_vocab_size
+                    corpus_config.get('min_count', MIN_COUNT),
+                    corpus_config.get('window_size', WINDOW_SIZE),
+                    corpus_config.get('vector_size', N_DIMS),
+                    corpus_config.get('max_vocab_size'),
                 )
             else:
                 model = Word2Vec.load(join(model_directory, full_model_file))
             _output, n_tokens = model.train(sentences, start_alpha=.05,
                         total_examples=len(list(sentences)), epochs=model.epochs)
         elif algorithm == 'ppmi':
-            model, n_tokens = train_ppmi(list(sentences), vector_size)
+            model, n_tokens = train_ppmi(
+                list(sentences), corpus_config.get('vector_size', N_DIMS)
+            )
         else:
             logger.error(
                 'unknown training algorithm specified, choose `word2vec` or `ppmi`')
@@ -139,7 +161,7 @@ def generate_models(
             'n_tokens': n_tokens,
             'n_terms': n_terms})
         saved_vectors.save(join(model_directory, model_name))
-        
+
     with open(join(model_directory, '{}_stats.csv'.format(full_model_name)), 'w+') as f:
         writer = csv.DictWriter(f, fieldnames=('time', 'n_tokens', 'n_terms'))
         writer.writeheader()

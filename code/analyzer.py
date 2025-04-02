@@ -1,6 +1,8 @@
+import logging
 import spacy
 
-import logging
+from util import CorpusConfigurationException
+
 logging.basicConfig(filename='analysis.log', level=logging.WARNING, filemode='a', datefmt='%Y-%m-%d %H:%M:%S', 
     format='%(asctime)s %(levelname)-8s %(message)s')
 logger = logging.getLogger(__name__)
@@ -15,12 +17,17 @@ spacy_models = {
 }
 
 class Analyzer(object):
-    def __init__(self, language, lemmatize):
-        self.lemmatize = lemmatize
-        self.language = language
+
+    def __init__(self, corpus_config: dict):
+        self.lemmatize = corpus_config.get('lemmatize', False)
+        self.language = corpus_config.get('language')
+        if not self.language:
+            raise CorpusConfigurationException(
+                'The corpus configuration should specify the language of the corpus'
+            )
         model = spacy_models.get(self.language)
         self.nlp = spacy.load(model)
-    
+
     def preprocess(self, input_string):
         # apply analysis pipeline
         doc = self.nlp(input_string)
@@ -42,7 +49,7 @@ class Analyzer(object):
                     if doc[index+1].text == '-':
                         try:
                             retokenizer.merge(doc[index:index+3])
-                        except Exception as e:
+                        except Exception:
                             logger.error(input_string, doc[index:index+3])
                             continue
         output = [self.select_token(token).lower() for token in doc if self.select_token(token)]

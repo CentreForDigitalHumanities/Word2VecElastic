@@ -1,12 +1,13 @@
-import time
 import pickle
 import os
+import time
+import warnings
 
 from elasticsearch import Elasticsearch
 from nltk.tokenize import PunktSentenceTokenizer
 
 
-from util import check_path
+from util import check_path, CorpusConfigurationException
 
 import logging
 logger = logging.getLogger(__name__)
@@ -52,13 +53,33 @@ class DataCollector():
     - field: field from which to collect data
     - source_directory: directory in which source data is saved
     '''
-    def __init__(self, index, start_year, end_year, analyzer, field, date_field, source_directory):
-        self.index = index
+    def __init__(
+        self,
+        corpus_config: dict,
+        start_year: int,
+        end_year: int,
+        analyzer: callable,
+        source_directory: str,
+    ):
+        self.corpus_config = corpus_config
+        self.index = corpus_config.get('index')
+        self.text_field = self.corpus_config.get('text_field')
+        if not self.index:
+            raise CorpusConfigurationException(
+                'The corpus configuration should specify `index`, i.e., the index name'
+            )
+        if not self.text_field:
+            raise CorpusConfigurationException(
+                'The corpus configuration should specify `text_field`, i.e., the name of the field with text data for training'
+            )
+        configured_date_field = self.corpus_config.get('date_field')
+        if not configured_date_field:
+            warnings.warn(
+                'The corpus configuration does not specify `date_field`, `date` will be used'
+            )
+        self.date_field = configured_date_field or 'date'
         self.start_year = start_year
         self.end_year = end_year
-        self.field = field
-        self.date_field = date_field
-        self.extra_filter = None # None for now, could be used for e.g. removing newspaper adverts
         self.generator = self.set_generator_function()
         self.analyzer = analyzer
         self.source_directory = source_directory
@@ -86,7 +107,7 @@ class DataCollector():
                     while not eof:
                         try:
                             yield pickle.load(source_file)
-                        except:
+                        except EOFError:
                             eof = True
             else:
                 sentences = self.get_sentences_for_year(year)
@@ -116,7 +137,7 @@ class DataCollector():
                 sentences.extend(doc_tok)
         return sentences
 
-    def get_documents_for_year(self, year):
+    def get_documents_for_year(self, year: int):
         '''Retrieves a list of documents for a year specified.'''
         min_date = str(year)+"-01-01"
         max_date = str(year)+"-12-31"
@@ -136,7 +157,9 @@ class DataCollector():
                 time.sleep(10)
         if not docs:
             return None
-        content = [result['_source'][self.field] for result in docs['hits']['hits']]
+        content = [
+            result['_source'][self.text_field] for result in docs['hits']['hits']
+        ]
         total_hits = docs['hits']['total']['value']
         if total_hits == 0:
             es.clear_scroll(scroll_id=docs['_scroll_id'])
@@ -150,9 +173,14 @@ class DataCollector():
                 logger.warning(e)
                 time.sleep(10)
                 docs = es.search(index=self.index, body=search_body, size=1000, scroll="60m")
-                content = [result['_source'][self.field] for result in docs['hits']['hits']]
+                content = [
+                    result['_source'][self.text_field]
+                    for result in docs['hits']['hits']
+                ]
                 continue
-            content.extend([result['_source'][self.field] for result in docs['hits']['hits']])
+            content.extend(
+                [result['_source'][self.text_field] for result in docs['hits']['hits']]
+            )
         es.clear_scroll(scroll_id=scroll_id)
         return content
 
@@ -165,28 +193,17 @@ class DataCollector():
         else:
             logger.warning('{} is not a string'.format(body))
 
-    def get_es_body(self, min_date, max_date):
-        body = { 
+    def get_es_body(self, min_date: str, max_date: str) -> dict:
+        body = {
             "query": {
                 "bool": {
                     "filter": [
-                        {
-                            "range" : {
-                                self.date_field : {
-                                    "gte" : min_date,
-                                    "lte" : max_date
-                                }
-                            }
-                        }
+                        {"range": {self.date_field: {"gte": min_date, "lte": max_date}}}
                     ]
                 }
-        }}
-        if self.extra_filter:
-            body['query']['bool']['filter'].append(
-                {
-                    "terms": {
-                        self.extra_filter
-                    }
-                }
-            )
+            }
+        }
+        update_query = self.corpus_config.get('update_query')
+        if update_query:
+            update_query(body)
         return body
