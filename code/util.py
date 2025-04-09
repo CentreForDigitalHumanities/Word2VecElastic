@@ -6,6 +6,10 @@ from glob import glob
 from gensim.models import KeyedVectors
 
 
+class CorpusConfigurationException(Exception):
+    pass
+
+
 def check_path(path):
     """Check if path exists and if it does not, create it."""
     if not os.path.isdir(path):

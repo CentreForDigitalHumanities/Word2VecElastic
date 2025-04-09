@@ -1,5 +1,5 @@
-FROM docker.io/python:3.8
-ENV PYTHONUNBUFFERED 1
+FROM docker.io/python:3.11
+ENV PYTHONUNBUFFERED=1
 
 WORKDIR /base
 COPY requirements.txt /base/
