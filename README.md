@@ -14,17 +14,20 @@ For the whole time period, a full model will be generated, which will be used as
 ## Elasticsearch
 The data is fetched from Elasticsearch. By default, this will attempt to fetch from a local instance (i.e., `localhost:9200`) For local development, install [Elasticsearch](https://www.elastic.co/guide/en/elasticsearch/reference/current/install-elasticsearch.html).
 
-In order to fetch data from a remote Elasticsearch cluster and/or on a different port, set environment variables. For instance, to fetch from `http://url-of-your-cluster:9900`, you would set:
-```bash
-export ES_HOST=http://url-of-your-cluster
-export ES_PORT=9900
-```
+In order to fetch data from a remote Elasticsearch cluster and/or on a different port, set environment variables through an `.env` file. The `.env-dist` file can be copied as a starting point.
 
-To connect to your remote cluster through SSL(recommended), you will also need to set the following variables:
+For instance, to fetch from `http://url-of-your-cluster:9900`, you would set:
 ```bash
-export API_ID=asdfgjkl
-export API_KEY=zxvnmnl
-export CERTS_LOCATION=/path/to/ca-bundle.crt
+ES_HOST=http://url-of-your-cluster
+ES_PORT=9900
+```
+If not set, `ES_HOST` will fall back to `localhost`, and `ES_PORT` to `9200`, respectively.
+
+To connect to a remote cluster through SSL(recommended), you will also need to set the following variables: `ES_API_ID`, `ES_API_KEY`, `CERTS_LOCATION`.
+
+Finally, if you would like to read from an index with a different name than the corpus, you can do this by setting `INDEX`. Once your `.env` file is set correctly, you can load the variables into your environment like so:
+```bash
+source .env
 ```
 
 ## Python

@@ -6,7 +6,7 @@ import warnings
 from elasticsearch import Elasticsearch
 from nltk.tokenize import PunktSentenceTokenizer
 
-
+from corpus_config import CORPUS_CONFIGURATIONS
 from util import check_path, CorpusConfigurationException
 
 import logging
@@ -24,8 +24,8 @@ kwargs = {
     'timeout': 180
 }
 
-API_ID = os.environ.get("API_ID", None)
-API_KEY = os.environ.get("API_KEY", None)
+API_ID = os.environ.get("ES_API_ID", None)
+API_KEY = os.environ.get("ES_API_KEY", None)
 CERTS_LOCATION = os.environ.get("CERTS_LOCATION")
 if API_ID and API_KEY and CERTS_LOCATION:
     node['scheme'] = 'https'
@@ -55,19 +55,19 @@ class DataCollector():
     '''
     def __init__(
         self,
-        corpus_config: dict,
+        corpus_name: str,
         start_year: int,
         end_year: int,
         analyzer: callable,
         source_directory: str,
     ):
-        self.corpus_config = corpus_config
-        self.index = corpus_config.get('index')
-        self.text_field = self.corpus_config.get('text_field')
-        if not self.index:
+        self.corpus_config = CORPUS_CONFIGURATIONS.get(corpus_name)
+        self.index = os.environ.get('INDEX', corpus_name)
+        if not es.indices.exists(index=self.index):
             raise CorpusConfigurationException(
-                'The corpus configuration should specify `index`, i.e., the index name'
+                f'The index {self.index} does not exist. Specify a correct name through your environment.'
             )
+        self.text_field = self.corpus_config.get('text_field')
         if not self.text_field:
             raise CorpusConfigurationException(
                 'The corpus configuration should specify `text_field`, i.e., the name of the field with text data for training'

@@ -94,14 +94,29 @@ def generate_models(
     corpus_config = CORPUS_CONFIGURATIONS.get(corpus)
     if not corpus_config:
         raise CorpusConfigurationException(
-            "The corpus configuration should specify `corpus`, i.e., the name of the corpus configuration object"
+            "CORPUS_CONFIGURATIONS does not contain specs for this corpus."
+        )
+    valid_keys = [
+        'algorithm',
+        'date_field',
+        'independent',
+        'language',
+        'lemmatize',
+        'min_count',
+        'max_vocab',
+        'text_field',
+        'vector_size',
+        'window_size',
+    ]
+    invalid_keys = list(set(corpus_config.keys()).intersection(set(valid_keys)))
+    if invalid_keys:
+        raise CorpusConfigurationException(
+            f"The following keys are invalid: {', '.join(invalid_keys)}"
         )
     analyzer = Analyzer(corpus_config).preprocess
     algorithm = corpus_config.get('algorithm', 'word2vec')
     independent = corpus_config.get('independent')
-    sentences = DataCollector(
-        corpus_config, start_year, end_year, analyzer, source_directory
-    )
+    sentences = DataCollector(corpus, start_year, end_year, analyzer, source_directory)
     full_model_name = '{}_{}_{}_full'.format(corpus, start_year, end_year)
     full_model_file =  '{}.model'.format(full_model_name)
     if not os.path.exists(join(model_directory, full_model_file)) and not independent:
