@@ -37,7 +37,7 @@ def test_invalid_configuration_parameter():
 def test_text_field_not_configured():
     CORPUS_CONFIGURATIONS.update({'test-corpus': {}})
     with pytest.raises(CorpusConfigurationException) as exception:
-        DataCollector('test-config', 1980, 1990, mockAnalyzer(), here)
+        DataCollector('test-corpus', 1980, 1990, mockAnalyzer(), here)
         assert str(exception.value).contains('text data')
 
 def test_language_not_configured():
