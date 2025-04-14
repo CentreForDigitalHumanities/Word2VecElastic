@@ -150,7 +150,7 @@ def generate_models(
         end = year + n_years
         model_name = '{}_{}_{}.wv'.format(corpus, start, end)
         logger.info('Building model: '+ model_name)
-        sentences = DataCollector(corpus_config, start, end, analyzer, source_directory)
+        sentences = DataCollector(corpus, start, end, analyzer, source_directory)
         if algorithm == 'word2vec':
             if independent:
                 model = get_model(
