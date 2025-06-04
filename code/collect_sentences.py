@@ -63,10 +63,10 @@ class DataCollector():
     ):
         self.corpus_config = CORPUS_CONFIGURATIONS.get(corpus_name)
         self.index = os.environ.get('INDEX', corpus_name)
-        # if not es.indices.exists(index=self.index):
-        #     raise CorpusConfigurationException(
-        #         f'The index {self.index} does not exist. Specify a correct name through your environment.'
-        #     )
+        if not es.indices.exists(index=self.index):
+            raise CorpusConfigurationException(
+                f'The index {self.index} does not exist. Specify a correct name through your environment.'
+            )
         self.text_field = self.corpus_config.get('text_field')
         if not self.text_field:
             raise CorpusConfigurationException(

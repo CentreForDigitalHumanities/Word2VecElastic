@@ -7,7 +7,8 @@ CORPUS_CONFIGURATIONS = {
     'dutch-newspapers': {
         'language': 'dutch',
         'text_field': 'content',
-        'update_query': dutchnewspapers_filter_article
+        'update_query': dutchnewspapers_filter_article,
+        'max_final_vocab': 30000,
     },
     'guardian-observer': {
         'language': 'english',
@@ -17,40 +18,49 @@ CORPUS_CONFIGURATIONS = {
     },
     'parliament-canada': {
         'language': 'english',
-        'text_field': 'speech'
+        'text_field': 'speech',
+        'min_count': 80
     },
     'parliament-finland': {
         'language': 'finnish',
         'lemmatize': True,
-        'text_field': 'speech'
+        'text_field': 'speech',
+        'min_count': 80
     },
     'parliament-france': {
         'language': 'french',
-        'text_field': 'speech'
+        'text_field': 'speech',
+        'min_count': 80
     },
     'parliament-germany': {
         'language': 'german',
-        'text_field': 'speech'
+        'text_field': 'speech',
+        'min_count': 80
     },
     'parliament-ireland': {
         'language': 'english',
-        'text_field': 'speech'
+        'text_field': 'speech',
+        'min_count': 80
     },
     'parliament_netherlands': {
         'language': 'dutch',
-        'text_field': 'speech'
+        'text_field': 'speech',
+        'min_count': 80
     },
     'parliament-sweden': {
         'language': 'swedish',
-        'text_field': 'speech'
+        'text_field': 'speech',
+        'min_count': 80
     },
     'parliament-uk': {
         'language': 'english',
-        'text_field': 'speech'
+        'text_field': 'speech',
+        'min_count': 80
     },
     'troonredes': {
         'algorithm': 'ppmi',
         'language': 'dutch',
-        'text_field': 'content'
+        'text_field': 'content',
+        'min_count': 80
     },
 }

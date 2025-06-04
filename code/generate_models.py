@@ -104,6 +104,7 @@ def generate_models(
         'lemmatize',
         'min_count',
         'max_vocab',
+        'max_final_vocab',
         'text_field',
         'vector_size',
         'window_size',
@@ -118,16 +119,17 @@ def generate_models(
     independent = corpus_config.get('independent', True)
     sentences = DataCollector(corpus, start_year, end_year, analyzer, source_directory)
     full_model_name = '{}_{}_{}_full'.format(corpus, start_year, end_year)
-    full_model_file =  '{}.model'.format(full_model_name)
+    full_model_file = '{}.model'.format(full_model_name)
     if not os.path.exists(join(model_directory, full_model_file)) and not independent:
         # skip this step when training independent models
         if algorithm == 'word2vec':
             model = get_model(
                 sentences,
-                corpus_config.get('min_count', MIN_COUNT),
+                corpus_config.get('min_count'),
                 corpus_config.get('window_size', WINDOW_SIZE),
                 corpus_config.get('vector_size', N_DIMS),
                 corpus_config.get('max_vocab_size'),
+                corpus_config.get('max_final_vocab')
             )
             model.train(sentences, total_examples=model.corpus_count,
                         epochs=model.epochs)
