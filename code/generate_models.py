@@ -189,13 +189,14 @@ def generate_models(
         writer.writerows(stats)
 
 
-def get_model(sentences, min_count, window_size, vector_size, max_vocab_size):
+def get_model(sentences, min_count: int, window_size: int, vector_size: int, max_vocab_size: int, max_final_vocab: int):
     ''' prepare a Word2Vec model and build its vocabulary '''
     model = Word2Vec(
         min_count=min_count,
         window=window_size,
         vector_size=vector_size,
-        max_vocab_size=max_vocab_size
+        max_vocab_size=max_vocab_size,
+        max_final_vocab=max_final_vocab
     )
     model.build_vocab(sentences)
     return model
