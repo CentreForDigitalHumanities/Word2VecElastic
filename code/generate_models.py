@@ -161,6 +161,7 @@ def generate_models(
                     corpus_config.get('window_size', WINDOW_SIZE),
                     corpus_config.get('vector_size', N_DIMS),
                     corpus_config.get('max_vocab_size'),
+                    corpus_config.get('max_final_vocab')
                 )
             else:
                 model = Word2Vec.load(join(model_directory, full_model_file))
