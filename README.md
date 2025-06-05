@@ -53,8 +53,9 @@ Optional settings are:
 - algorithm: set 'ppmi' or leave unset (will default to 'word2vec')
 - date_field: the field to filter for specific years. Raises a warning if not set to inform that `date` will be used as default.
 - independent: if `False`, the `generate_models` script will first train a large corpus for all data, and then proceed to retrain for time slices of the data. Defaults to `True` (i.e., each model is trained independently of data from other time slices). Note that limiting the size of the vocabulary with `max_vocab_size` and `min_count` may not be as effective when training with `independent=False`.
-- max_vocab_size: can be used to prune a word model, useful in presence of spelling variations and/or to limit the size of word models. Defaults to `None` (i.e, no pruning).
-- min_count: the number of times a word must appear in the data in order to be included in the model. Defaults to 80.
+- max_vocab_size: can be used to prune the vocabulary during training, so that the memory size does not explode. Defaults to `None`.
+- min_count: the number of times a word must appear in the data in order to be included in the model. Defaults to `None`.
+- max_final_vocab: can be used to choose the `min_count` automatically to limit the final vocabulary to this size. Defaults to `None`.
 - vector_size: the number of dimensions of the resulting word vectors. Defaults to 100.
 - window_size: the size of the window around a target word for the word2vec algorithm. Defaults to 5.
 
