@@ -18,8 +18,7 @@ CORPUS_CONFIGURATIONS = {
     },
     'times': {
         'language': 'english',
-        'min_count': 150,
-        'max_vocab': 20000,
+        'max_final_vocab': 30000,
         'text_field': 'content',
     },
     'parliament-canada': {
