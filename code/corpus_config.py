@@ -64,4 +64,9 @@ CORPUS_CONFIGURATIONS = {
         'text_field': 'content',
         'min_count': 80,
     },
+    'parliament-europe': {
+        'language': 'english',
+        'text_field': 'speech',
+        'min_count': 80,
+    }
 }
