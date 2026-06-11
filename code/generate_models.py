@@ -90,6 +90,7 @@ def generate_models(
         - its word vectors (gensim KeyedVectors) ('*start-end.wv')
     The statistics are saved to the model folder as a .csv
     """
+    logger.info('generate_models started')
     check_path(model_directory)
     corpus_config = CORPUS_CONFIGURATIONS.get(corpus)
     if not corpus_config:
