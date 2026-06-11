@@ -120,7 +120,8 @@ def generate_models(
     sentences = DataCollector(corpus, start_year, end_year, analyzer, source_directory)
     full_model_name = '{}_{}_{}_full'.format(corpus, start_year, end_year)
     full_model_file = '{}.model'.format(full_model_name)
-    if not os.path.exists(join(model_directory, full_model_file)) and not independent:
+    full_model_path = join(model_directory, full_model_file)
+    if not os.path.exists(full_model_path) and not independent:
         # skip this step when training independent models
         if algorithm == 'word2vec':
             model = get_model(
@@ -133,7 +134,7 @@ def generate_models(
             )
             model.train(sentences, total_examples=model.corpus_count,
                         epochs=model.epochs)
-            model.save(join(model_directory, full_model_file))
+            model.save(full_model_path)
         elif algorithm == 'ppmi':
             model = train_ppmi(
                 list(sentences), corpus_config.get('vector_size', N_DIMS)
@@ -164,7 +165,7 @@ def generate_models(
                     corpus_config.get('max_final_vocab')
                 )
             else:
-                model = Word2Vec.load(join(model_directory, full_model_file))
+                model = Word2Vec.load(full_model_path)
             _output, n_tokens = model.train(sentences, start_alpha=.05,
                         total_examples=len(sentences), epochs=model.epochs)
         elif algorithm == 'ppmi':
@@ -188,6 +189,7 @@ def generate_models(
         writer = csv.DictWriter(f, fieldnames=('time', 'n_tokens', 'n_terms'))
         writer.writeheader()
         writer.writerows(stats)
+
 
 
 def get_model(sentences, min_count: int, window_size: int, vector_size: int, max_vocab_size: int, max_final_vocab: int):
