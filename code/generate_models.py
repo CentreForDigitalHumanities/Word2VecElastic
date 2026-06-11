@@ -5,6 +5,7 @@ one of the models spans a given number of years.
 import csv
 from os.path import join
 import os
+from datetime import datetime
 
 import click
 from gensim.models.word2vec import Word2Vec
@@ -20,8 +21,6 @@ from util import check_path, CorpusConfigurationException
 import ppmi
 
 import logging
-logging.basicConfig(filename='models.log', level=logging.INFO, filemode='a', datefmt='%Y-%m-%d %H:%M:%S', 
-    format='%(asctime)s %(levelname)-8s %(message)s')
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
 logger.addHandler(logging.FileHandler('models.log'))
@@ -93,8 +92,7 @@ def generate_models(
         - its word vectors (gensim KeyedVectors) ('*start-end.wv')
     The statistics are saved to the model folder as a .csv
     """
-    logger.info('generate_models started')
-    print('generate_models called')
+    logger.info('generate_models started at ' + str(datetime.now()))
     check_path(model_directory)
     corpus_config = CORPUS_CONFIGURATIONS.get(corpus)
     if not corpus_config:
