@@ -118,12 +118,12 @@ def generate_models(
     analyzer = Analyzer(corpus_config).preprocess
     algorithm = corpus_config.get('algorithm', 'word2vec')
     independent = corpus_config.get('independent', True)
-    sentences = DataCollector(corpus, start_year, end_year, analyzer, source_directory)
     full_model_name = '{}_{}_{}_full'.format(corpus, start_year, end_year)
     full_model_file = '{}.model'.format(full_model_name)
     full_model_path = join(model_directory, full_model_file)
     if not os.path.exists(full_model_path) and not independent:
         # skip this step when training independent models
+        sentences = DataCollector(corpus, start_year, end_year, analyzer, source_directory)
         if algorithm == 'word2vec':
             model, _tokens = train_word2vec(sentences, corpus_config)
             model.save(full_model_path)
