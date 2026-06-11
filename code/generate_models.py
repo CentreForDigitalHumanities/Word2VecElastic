@@ -22,7 +22,9 @@ import ppmi
 import logging
 logging.basicConfig(filename='models.log', level=logging.INFO, filemode='a', datefmt='%Y-%m-%d %H:%M:%S', 
     format='%(asctime)s %(levelname)-8s %(message)s')
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
+logger.level = logging.INFO
+logger.addHandler(logging.FileHandler('models.log'))
 
 
 MIN_COUNT = 80
