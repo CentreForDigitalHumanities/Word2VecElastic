@@ -152,7 +152,7 @@ def generate_models(
         end = year + n_years
         model_name = '{}_{}_{}.wv'.format(corpus, start, end)
         logger.info('Building model: '+ model_name)
-        sentences = DataCollector(corpus, start, end, analyzer, source_directory)
+        sentences = list(DataCollector(corpus, start, end, analyzer, source_directory))
         if algorithm == 'word2vec':
             if independent:
                 model = get_model(
@@ -166,10 +166,10 @@ def generate_models(
             else:
                 model = Word2Vec.load(join(model_directory, full_model_file))
             _output, n_tokens = model.train(sentences, start_alpha=.05,
-                        total_examples=len(list(sentences)), epochs=model.epochs)
+                        total_examples=len(sentences), epochs=model.epochs)
         elif algorithm == 'ppmi':
             model, n_tokens = train_ppmi(
-                list(sentences), corpus_config.get('vector_size', N_DIMS)
+                sentences, corpus_config.get('vector_size', N_DIMS)
             )
         else:
             logger.error(
@@ -200,6 +200,7 @@ def get_model(sentences, min_count: int, window_size: int, vector_size: int, max
         max_final_vocab=max_final_vocab
     )
     model.build_vocab(sentences)
+    logger.info('Vocab size:', len(model.wv))
     return model
 
 
