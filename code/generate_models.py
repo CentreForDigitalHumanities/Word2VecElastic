@@ -22,7 +22,8 @@ import ppmi
 import logging
 logging.basicConfig(filename='models.log', level=logging.INFO, filemode='a', datefmt='%Y-%m-%d %H:%M:%S', 
     format='%(asctime)s %(levelname)-8s %(message)s')
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
+
 
 MIN_COUNT = 80
 N_DIMS = 100
@@ -91,6 +92,7 @@ def generate_models(
     The statistics are saved to the model folder as a .csv
     """
     logger.info('generate_models started')
+    print('generate_models called')
     check_path(model_directory)
     corpus_config = CORPUS_CONFIGURATIONS.get(corpus)
     if not corpus_config:
