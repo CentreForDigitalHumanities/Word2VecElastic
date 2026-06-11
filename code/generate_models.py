@@ -156,6 +156,7 @@ def generate_models(
             logger.error(
                 'unknown training algorithm specified, choose `word2vec` or `ppmi`')
             return
+        logger.info('Model trained: ' + model_name)
         saved_vectors, n_terms, n_tokens = get_vectors_and_stats(
             model, sentences, n_tokens, independent
         )
@@ -164,6 +165,7 @@ def generate_models(
             'n_tokens': n_tokens,
             'n_terms': n_terms})
         saved_vectors.save(join(model_directory, model_name))
+        logger.info('Model saved: ' + model_name)
 
     with open(join(model_directory, '{}_stats.csv'.format(full_model_name)), 'w+') as f:
         writer = csv.DictWriter(f, fieldnames=('time', 'n_tokens', 'n_terms'))
