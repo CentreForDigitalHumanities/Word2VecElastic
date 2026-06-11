@@ -2,6 +2,7 @@ import pickle
 import os
 import time
 import warnings
+from typing import List
 
 from elasticsearch import Elasticsearch
 from nltk.tokenize import PunktSentenceTokenizer
@@ -132,12 +133,13 @@ class DataCollector():
             return None
         sentences = []
         for doc in docs:
-            doc_tok = self.tokenize_sentences(doc)
-            if doc_tok:
-                sentences.extend(doc_tok)
+            if doc:
+                doc_tok = self.tokenize_sentences(doc)
+                if doc_tok:
+                    sentences.extend(doc_tok)
         return sentences
 
-    def get_documents_for_year(self, year: int):
+    def get_documents_for_year(self, year: int) -> List[str]:
         '''Retrieves a list of documents for a year specified.'''
         min_date = str(year)+"-01-01"
         max_date = str(year)+"-12-31"
@@ -157,9 +159,7 @@ class DataCollector():
                 time.sleep(10)
         if not docs:
             return None
-        content = [
-            result['_source'][self.text_field] for result in docs['hits']['hits']
-        ]
+        content = self._get_content(docs)
         total_hits = docs['hits']['total']['value']
         if total_hits == 0:
             es.clear_scroll(scroll_id=docs['_scroll_id'])
@@ -173,16 +173,19 @@ class DataCollector():
                 logger.warning(e)
                 time.sleep(10)
                 docs = es.search(index=self.index, body=search_body, size=1000, scroll="60m")
-                content = [
-                    result['_source'][self.text_field]
-                    for result in docs['hits']['hits']
-                ]
+                content = self._get_content(docs)
                 continue
-            content.extend(
-                [result['_source'][self.text_field] for result in docs['hits']['hits']]
-            )
+            content.extend(self._get_content(docs))
         es.clear_scroll(scroll_id=scroll_id)
         return content
+
+
+    def _get_content(self, search_result) -> List[str]:
+        return [
+            result['_source'].get(self.text_field, '')
+            for result in search_result['hits']['hits']
+        ]
+
 
     def tokenize_sentences(self, body):
         """Transform a single news paper article into a list of sentences (each
