@@ -124,16 +124,7 @@ def generate_models(
     if not os.path.exists(full_model_path) and not independent:
         # skip this step when training independent models
         if algorithm == 'word2vec':
-            model = get_model(
-                sentences,
-                corpus_config.get('min_count'),
-                corpus_config.get('window_size', WINDOW_SIZE),
-                corpus_config.get('vector_size', N_DIMS),
-                corpus_config.get('max_vocab_size'),
-                corpus_config.get('max_final_vocab')
-            )
-            model.train(sentences, total_examples=model.corpus_count,
-                        epochs=model.epochs)
+            model, _tokens = train_word2vec(sentences, corpus_config)
             model.save(full_model_path)
         elif algorithm == 'ppmi':
             model = train_ppmi(
@@ -155,19 +146,8 @@ def generate_models(
         logger.info('Building model: '+ model_name)
         sentences = list(DataCollector(corpus, start, end, analyzer, source_directory))
         if algorithm == 'word2vec':
-            if independent:
-                model = get_model(
-                    sentences,
-                    corpus_config.get('min_count', MIN_COUNT),
-                    corpus_config.get('window_size', WINDOW_SIZE),
-                    corpus_config.get('vector_size', N_DIMS),
-                    corpus_config.get('max_vocab_size'),
-                    corpus_config.get('max_final_vocab')
-                )
-            else:
-                model = Word2Vec.load(full_model_path)
-            _output, n_tokens = model.train(sentences, start_alpha=.05,
-                        total_examples=len(sentences), epochs=model.epochs)
+            initial = full_model_path if independent else None
+            model, n_tokens = train_word2vec(sentences, corpus_config, initial)
         elif algorithm == 'ppmi':
             model, n_tokens = train_ppmi(
                 sentences, corpus_config.get('vector_size', N_DIMS)
@@ -190,6 +170,26 @@ def generate_models(
         writer.writeheader()
         writer.writerows(stats)
 
+
+def train_word2vec(sentences, corpus_config, initial_model_path=None):
+    if initial_model_path:
+        model = Word2Vec.load(initial_model_path)
+        start_alpha = .05
+    else:
+        model = get_model(
+            sentences,
+            corpus_config.get('min_count', MIN_COUNT),
+            corpus_config.get('window_size', WINDOW_SIZE),
+            corpus_config.get('vector_size', N_DIMS),
+            corpus_config.get('max_vocab_size'),
+            corpus_config.get('max_final_vocab')
+        )
+        start_alpha = None
+
+    _output, n_tokens = model.train(
+        sentences, start_alpha=start_alpha, total_examples=len(sentences), epochs=model.epochs
+    )
+    return model, n_tokens
 
 
 def get_model(sentences, min_count: int, window_size: int, vector_size: int, max_vocab_size: int, max_final_vocab: int):
