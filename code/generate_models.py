@@ -210,7 +210,7 @@ def get_model(sentences, min_count: int, window_size: int, vector_size: int, max
         max_final_vocab=max_final_vocab
     )
     model.build_vocab(sentences)
-    logger.info('Vocab size:', len(model.wv))
+    logger.info(f'Built vocabulary, size = {len(model.wv)}')
     return model
 
 
