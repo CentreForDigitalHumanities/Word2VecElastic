@@ -61,6 +61,7 @@ CORPUS_CONFIGURATIONS = {
     'troonredes': {
         'language': 'dutch',
         'text_field': 'content',
+        'date_field': 'date',
         'min_count': 10,
     },
     'parliament-europe': {
