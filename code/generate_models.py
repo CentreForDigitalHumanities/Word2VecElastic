@@ -21,9 +21,8 @@ from util import check_path, CorpusConfigurationException
 import ppmi
 
 import logging
+
 logger = logging.getLogger(__name__)
-logger.level = logging.INFO
-logger.addHandler(logging.FileHandler('models.log'))
 
 
 MIN_COUNT = 80
@@ -92,6 +91,10 @@ def generate_models(
         - its word vectors (gensim KeyedVectors) ('*start-end.wv')
     The statistics are saved to the model folder as a .csv
     """
+    logging.basicConfig(
+        filename='models.log', level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S'
+    )
+
     logger.info('generate_models started at ' + str(datetime.now()))
     check_path(model_directory)
     corpus_config = CORPUS_CONFIGURATIONS.get(corpus)

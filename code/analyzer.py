@@ -3,8 +3,6 @@ import spacy
 
 from util import CorpusConfigurationException
 
-logging.basicConfig(filename='analysis.log', level=logging.WARNING, filemode='a', datefmt='%Y-%m-%d %H:%M:%S', 
-    format='%(asctime)s %(levelname)-8s %(message)s')
 logger = logging.getLogger(__name__)
 
 spacy_models = {
