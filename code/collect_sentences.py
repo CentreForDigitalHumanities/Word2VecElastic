@@ -201,6 +201,7 @@ class DataCollector():
                             eof = True
             else:
                 sentences = self.get_sentences_for_year(year)
+                logger.info('Analysing sentences...')
                 if not sentences:
                     continue
                 with open(filename, 'wb') as text_file:
@@ -223,6 +224,7 @@ class DataCollector():
         docs = collector.get_documents()
         if not docs:
             return None
+        logger.info('Tokenising sentences...')
         sentences = []
         for doc in docs:
             if doc:
