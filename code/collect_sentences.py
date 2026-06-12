@@ -133,6 +133,7 @@ class DataCollector():
             return None
         sentences = []
         for doc in docs:
+            logger.info(doc)
             if doc:
                 doc_tok = self.tokenize_sentences(doc)
                 if doc_tok:
