@@ -75,7 +75,7 @@ class DataCollector():
             )
         configured_date_field = self.corpus_config.get('date_field')
         if not configured_date_field:
-            warnings.warn(
+            logger.warning(
                 'The corpus configuration does not specify `date_field`, `date` will be used'
             )
         self.date_field = configured_date_field or 'date'
