@@ -161,8 +161,6 @@ class DataCollector():
         if not docs:
             return None
         content = self._get_content(docs)
-        logger.info(docs)
-        logger.info(content)
         total_hits = docs['hits']['total']['value']
         if total_hits == 0:
             es.clear_scroll(scroll_id=docs['_scroll_id'])
@@ -172,7 +170,6 @@ class DataCollector():
             scroll_id = docs['_scroll_id']
             try:
                 docs = es.scroll(scroll_id=scroll_id, scroll="60m")
-                logger.info(docs)
             except Exception as e:
                 logger.warning(e)
                 time.sleep(10)
