@@ -19,9 +19,6 @@ expected_es_body = {
     }
 }
 
-class mockAnalyzer(object):
-    pass
-
 
 def mock_index_exists(index: str) -> bool:
     return True
@@ -30,14 +27,14 @@ def mock_index_exists(index: str) -> bool:
 def test_invalid_configuration_parameter():
     CORPUS_CONFIGURATIONS.update({'test-corpus': {'typo': 'blabla', 'gibberish': 42}})
     with pytest.raises(CorpusConfigurationException) as exception:
-        DataCollector('test-corpus', 1980, 1990, mockAnalyzer(), here)
+        DataCollector('test-corpus', 1980, 1990, here)
         assert str(exception.value).contains('gibberish')
 
 
 def test_text_field_not_configured():
     CORPUS_CONFIGURATIONS.update({'test-corpus': {}})
     with pytest.raises(CorpusConfigurationException) as exception:
-        DataCollector('test-corpus', 1980, 1990, mockAnalyzer(), here)
+        DataCollector('test-corpus', 1980, 1990, here)
         assert str(exception.value).contains('text data')
 
 def test_language_not_configured():
@@ -60,6 +57,6 @@ def test_update_query(monkeypatch):
         }
     )
     monkeypatch.setattr(es.indices, 'exists', mock_index_exists)
-    data_collector = DataCollector('test-corpus', 1980, 1990, mockAnalyzer, here)
+    data_collector = DataCollector('test-corpus', 1980, 1990, here)
     es_body = data_collector.get_es_body('1980-01-01', '1980-12-31')
     assert(es_body == expected_es_body)

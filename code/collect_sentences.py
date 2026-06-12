@@ -9,6 +9,7 @@ from nltk.tokenize import PunktSentenceTokenizer
 
 from corpus_config import CORPUS_CONFIGURATIONS
 from util import check_path, CorpusConfigurationException
+from analyzer import Analyzer
 
 import logging
 logger = logging.getLogger(__name__)
@@ -59,7 +60,6 @@ class DataCollector():
         corpus_name: str,
         start_year: int,
         end_year: int,
-        analyzer: callable,
         source_directory: str,
     ):
         self.corpus_config = CORPUS_CONFIGURATIONS.get(corpus_name)
@@ -82,7 +82,7 @@ class DataCollector():
         self.start_year = start_year
         self.end_year = end_year
         self.generator = self.set_generator_function()
-        self.analyzer = analyzer
+        self.analyzer = Analyzer(self.corpus_config).preprocess
         self.source_directory = source_directory
 
     def __iter__(self):

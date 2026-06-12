@@ -16,7 +16,6 @@ from sklearn.feature_extraction.text import CountVectorizer
 
 from collect_sentences import DataCollector
 from corpus_config import CORPUS_CONFIGURATIONS
-from analyzer import Analyzer
 from util import check_path, CorpusConfigurationException
 import ppmi
 
@@ -120,7 +119,6 @@ def generate_models(
         raise CorpusConfigurationException(
             f"The following keys are invalid: {', '.join(invalid_keys)}"
         )
-    analyzer = Analyzer(corpus_config).preprocess
     algorithm = corpus_config.get('algorithm', 'word2vec')
     independent = corpus_config.get('independent', True)
     full_model_name = '{}_{}_{}_full'.format(corpus, start_year, end_year)
@@ -128,7 +126,7 @@ def generate_models(
     full_model_path = join(model_directory, full_model_file)
     if not os.path.exists(full_model_path) and not independent:
         # skip this step when training independent models
-        sentences = DataCollector(corpus, start_year, end_year, analyzer, source_directory)
+        sentences = DataCollector(corpus, start_year, end_year, source_directory)
         if algorithm == 'word2vec':
             model, _tokens = train_word2vec(sentences, corpus_config)
             model.save(full_model_path)
@@ -150,7 +148,7 @@ def generate_models(
         end = year + n_years
         model_name = '{}_{}_{}.wv'.format(corpus, start, end)
         logger.info('Building model: '+ model_name)
-        sentences = list(DataCollector(corpus, start, end, analyzer, source_directory))
+        sentences = list(DataCollector(corpus, start, end, source_directory))
         if algorithm == 'word2vec':
             initial = full_model_path if not independent else None
             model, n_tokens = train_word2vec(sentences, corpus_config, initial)

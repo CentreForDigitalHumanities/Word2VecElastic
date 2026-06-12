@@ -1,32 +1,23 @@
-from shutil import rmtree
 import tempfile
 
 import pytest
 
 from collect_sentences import es, DataCollector
-from corpus_config import CORPUS_CONFIGURATIONS
-from analyzer import Analyzer
 from .test_corpus_config import mock_index_exists
 
 n_years = 5
 end_year = 1986
 start_year = end_year - n_years
 
-@pytest.fixture
-def analyzer():
-    corpus_config = CORPUS_CONFIGURATIONS.get('guardian-observer')
-    return Analyzer(corpus_config).preprocess
-
 
 @pytest.fixture
-def collector(analyzer, monkeypatch):
+def collector(monkeypatch):
     monkeypatch.setattr(es.indices, 'exists', mock_index_exists)
     with tempfile.TemporaryDirectory() as temp_dir:
         return DataCollector(
             'guardian-observer',
             start_year=start_year,
             end_year=end_year,
-            analyzer=analyzer,
             source_directory=temp_dir,
         )
 
