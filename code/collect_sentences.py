@@ -172,6 +172,7 @@ class DataCollector():
             scroll_id = docs['_scroll_id']
             try:
                 docs = es.scroll(scroll_id=scroll_id, scroll="60m")
+                logger.info(docs)
             except Exception as e:
                 logger.warning(e)
                 time.sleep(10)
