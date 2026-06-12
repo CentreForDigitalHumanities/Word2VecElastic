@@ -192,6 +192,7 @@ class DataCollector():
         for year in range(self.start_year, self.end_year):
             filename = self.get_pickle_filename(year)
             if os.path.exists(filename):
+                logger.info('Using pre-collected sentences: %s', filename)
                 with open(filename, 'rb') as source_file:
                     eof = False
                     while not eof:
@@ -200,6 +201,7 @@ class DataCollector():
                         except EOFError:
                             eof = True
             else:
+                logger.info('Fetching data from Elasticsearch...')
                 sentences = self.get_sentences_for_year(year)
                 logger.info('Analysing sentences...')
                 if not sentences:
