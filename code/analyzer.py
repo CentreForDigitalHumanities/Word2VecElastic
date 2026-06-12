@@ -43,7 +43,6 @@ class Analyzer(object):
         if spans:
             with doc.retokenize() as retokenizer:
                 for start, end in spans:
-                    print(start, end)
                     try:
                         retokenizer.merge(doc[start:end])
                     except Exception as e:
