@@ -9,3 +9,5 @@ config.py
 /test
 .env/
 .env
+
+.vscode
