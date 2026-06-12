@@ -70,17 +70,10 @@ class ESCollector():
 
     def get_documents(self):
         '''Retrieves a list of documents for the specified date range'''
-        search_body = self.get_es_body()
         docs = None
         for retry in range(10):
             try:
-                docs = es.search(
-                    index=self.index,
-                    size=1000,
-                    scroll="60m",
-                    track_total_hits=True,
-                    **search_body,
-                )
+                docs = self._search()
                 break
             except Exception as e:
                 logger.warning(e)
@@ -100,17 +93,24 @@ class ESCollector():
             except Exception as e:
                 logger.warning(e)
                 time.sleep(10)
-                docs = es.search(
-                    index=self.index,
-                    size=1000,
-                    scroll="60m",
-                    **search_body,
-                )
+                docs = self._search()
                 content = self._get_content(docs)
                 continue
             content.extend(self._get_content(docs))
         es.clear_scroll(scroll_id=scroll_id)
         return content
+
+    def _search(self):
+        '''Initial search request'''
+        search_body = self.get_es_body()
+        return es.search(
+            index=self.index,
+            size=1000,
+            scroll="60m",
+            track_total_hits=True,
+            **search_body,
+        )
+
 
 
     def _get_content(self, search_result) -> List[str]:
