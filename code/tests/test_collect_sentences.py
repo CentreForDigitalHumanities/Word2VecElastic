@@ -1,8 +1,7 @@
 import tempfile
-
 import pytest
 
-from collect_sentences import es, DataCollector, ESCollector
+from collect_sentences import es, DataCollector, ESCollector, time
 from .test_corpus_config import mock_index_exists
 
 n_years = 5
@@ -21,24 +20,26 @@ def collector(monkeypatch):
             source_directory=temp_dir,
         )
 
-_search_result = {
-    "_scroll_id": 42,
-    "hits": {"total": {"value": 4},
-    "hits": [
-        {'_source': {"test_field": "This is a wonderful sentence. Here, have another."}},
-        {'_source': {"test_field": "Nothing but GREAT sentences!"}},
-        {'_source': {"test_field": "Creativity never ends!"}},
-        {'_source': {"test_field": "I will not buy this record. It is scratched."}}
-    ]}
-}
+@pytest.fixture
+def search_result():
+    return {
+        "_scroll_id": 42,
+        "hits": {"total": {"value": 4},
+        "hits": [
+            {'_source': {"test_field": "This is a wonderful sentence. Here, have another."}},
+            {'_source': {"test_field": "Nothing but GREAT sentences!"}},
+            {'_source': {"test_field": "Creativity never ends!"}},
+            {'_source': {"test_field": "I will not buy this record. It is scratched."}}
+        ]}
+    }
 
-def mock_data_collector(monkeypatch, collector):
-    def mock_search(index, body, size, scroll, track_total_hits):
-        return _search_result
+def mock_search(*args, **kwargs):
+    return search_result
 
-    def mock_clear_scroll(scroll_id):
-        return {'acknowledged': True}
+def mock_clear_scroll(scroll_id):
+    return {'acknowledged': True}
 
+def mock_data_collector(monkeypatch, collector, search_result):
     monkeypatch.setattr(es, 'search', mock_search)
     monkeypatch.setattr(es, 'clear_scroll', mock_clear_scroll)
 
@@ -59,6 +60,26 @@ def test_get_sentences(monkeypatch, collector):
     assert len(list(sentences)) == 2 * (n_years - 1)
 
 
+def test_get_content(monkeypatch, search_result):
+    monkeypatch.setattr(es.indices, 'exists', mock_index_exists)
+    collector = ESCollector('guardian-observer', 1980, 1990)
+    collector.text_field = 'test_field'
+    docs = collector._get_content(search_result)
+    assert len(docs) == 4
+    assert docs[0] == "This is a wonderful sentence. Here, have another."
+
+
+def test_get_content_missing_values(monkeypatch, search_result):
+    monkeypatch.setattr(es.indices, 'exists', mock_index_exists)
+    collector = ESCollector('guardian-observer', 1980, 1990)
+    collector.text_field = 'test_field'
+    search_result['hits']['hits'][1]['_source'].pop('test_field')
+    docs = collector._get_content(search_result)
+    assert len(docs) == 4
+    assert docs[1] == ""
+
+
+
 class ExceptionFaker():
     def __init__(self, times, output):
         self.times = times
@@ -74,12 +95,13 @@ class ExceptionFaker():
             return self.output
 
 
-
-def test_retry(monkeypatch):
+def test_retry(monkeypatch, search_result):
     monkeypatch.setattr(es.indices, 'exists', mock_index_exists)
+    monkeypatch.setattr(es, 'clear_scroll', mock_clear_scroll)
     monkeypatch.setattr(time, 'sleep', lambda t: None) # skip sleep time
     collector = ESCollector('guardian-observer', start_year, end_year)
-    faker = ExceptionFaker(3, _search_result)
+    collector.text_field = 'test_field'
+    faker = ExceptionFaker(3, search_result)
     monkeypatch.setattr(collector, '_search', faker.run)
     docs = collector.get_documents()
     assert len(docs) == 4
