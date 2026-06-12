@@ -70,35 +70,17 @@ class ESCollector():
 
     def get_documents(self):
         '''Retrieves a list of documents for the specified date range'''
-        docs = None
         for retry in range(10):
             try:
-                docs = self._search()
-                break
+                docs = list(self._scroll())
+                return docs
             except Exception as e:
-                logger.warning(e)
-                time.sleep(10)
-        if not docs:
-            return None
-        content = self._get_content(docs)
-        total_hits = docs['hits']['total']['value']
-        if total_hits == 0:
-            es.clear_scroll(scroll_id=docs['_scroll_id'])
-            return None
-        scroll_id = docs['_scroll_id']
-        while len(content)<total_hits:
-            scroll_id = docs['_scroll_id']
-            try:
-                docs = es.scroll(scroll_id=scroll_id, scroll="60m")
-            except Exception as e:
-                logger.warning(e)
-                time.sleep(10)
-                docs = self._search()
-                content = self._get_content(docs)
-                continue
-            content.extend(self._get_content(docs))
-        es.clear_scroll(scroll_id=scroll_id)
-        return content
+                if retry < 9:
+                    logger.warning(e)
+                    time.sleep(10)
+                else:
+                    logger.error(e)
+
 
     def _search(self):
         '''Initial search request'''
@@ -112,11 +94,28 @@ class ESCollector():
         )
 
 
+    def _scroll(self):
+        count = 0
+        docs = self._search()
+        content = self._get_content(docs)
+        count += len(content)
+        yield from content
+        total_hits = docs['hits']['total']['value']
+        scroll_id = docs['_scroll_id']
+        while count < total_hits:
+            scroll_id = docs['_scroll_id']
+            docs = es.scroll(scroll_id=scroll_id, scroll="60m")
+            content = self._get_content(docs)
+            count += len(content)
+            yield from content
+        es.clear_scroll(scroll_id=scroll_id)
+
 
     def _get_content(self, search_result) -> List[str]:
+        hits = search_result['hits']['hits']
         return [
-            result['_source'].get(self.text_field, '')
-            for result in search_result['hits']['hits']
+            doc['_source'].get(self.text_field, '')
+            for doc in hits
         ]
 
 

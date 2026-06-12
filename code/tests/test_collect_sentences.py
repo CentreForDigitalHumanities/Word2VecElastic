@@ -2,7 +2,7 @@ import tempfile
 
 import pytest
 
-from collect_sentences import es, DataCollector
+from collect_sentences import es, DataCollector, ESCollector
 from .test_corpus_config import mock_index_exists
 
 n_years = 5
@@ -21,19 +21,20 @@ def collector(monkeypatch):
             source_directory=temp_dir,
         )
 
+_search_result = {
+    "_scroll_id": 42,
+    "hits": {"total": {"value": 4},
+    "hits": [
+        {'_source': {"test_field": "This is a wonderful sentence. Here, have another."}},
+        {'_source': {"test_field": "Nothing but GREAT sentences!"}},
+        {'_source': {"test_field": "Creativity never ends!"}},
+        {'_source': {"test_field": "I will not buy this record. It is scratched."}}
+    ]}
+}
 
 def mock_data_collector(monkeypatch, collector):
     def mock_search(index, body, size, scroll, track_total_hits):
-        return {
-            "_scroll_id": 42,
-            "hits": {"total": {"value": 4},
-            "hits": [
-                {'_source': {"test_field": "This is a wonderful sentence. Here, have another."}},
-                {'_source': {"test_field": "Nothing but GREAT sentences!"}},
-                {'_source': {"test_field": "Creativity never ends!"}},
-                {'_source': {"test_field": "I will not buy this record. It is scratched."}}
-            ]}
-        }
+        return _search_result
 
     def mock_clear_scroll(scroll_id):
         return {'acknowledged': True}
@@ -56,3 +57,29 @@ def test_get_sentences(monkeypatch, collector):
     monkeypatch.setattr(data_collector, "get_sentences_for_year", some_sentences)
     sentences = data_collector.get_sentences()
     assert len(list(sentences)) == 2 * (n_years - 1)
+
+
+class ExceptionFaker():
+    def __init__(self, times, output):
+        self.times = times
+        self.count = 0
+        self.output = output
+
+    def run(self):
+        if self.count < self.times:
+            self.count += 1
+            raise Exception('Test exception')
+        else:
+            self.count += 1
+            return self.output
+
+
+
+def test_retry(monkeypatch):
+    monkeypatch.setattr(es.indices, 'exists', mock_index_exists)
+    monkeypatch.setattr(time, 'sleep', lambda t: None) # skip sleep time
+    collector = ESCollector('guardian-observer', start_year, end_year)
+    faker = ExceptionFaker(3, _search_result)
+    monkeypatch.setattr(collector, '_search', faker.run)
+    docs = collector.get_documents()
+    assert len(docs) == 4
