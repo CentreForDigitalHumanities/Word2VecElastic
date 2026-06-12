@@ -154,6 +154,7 @@ class DataCollector():
                     track_total_hits=True,
                     **search_body,
                 )
+                break
             except Exception as e:
                 logger.warning(e)
                 time.sleep(10)
