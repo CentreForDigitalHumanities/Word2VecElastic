@@ -46,7 +46,7 @@ class Analyzer(object):
                     try:
                         retokenizer.merge(doc[start:end])
                     except Exception as e:
-                        logger.error('Could not merge %s (Sentence: %s)', doc[start:end], doc)
+                        logger.error('Could not merge %s (Sentence: %s)', doc[start:end], doc, exc_info=True)
                         continue
 
 

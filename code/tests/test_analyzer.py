@@ -42,6 +42,10 @@ def test_double_hyphen_exception():
     output = analyzer(test_sentence)
     assert 'ultra-neo-liberal' in output
 
+    test_sentence = 'This agreement is a kind of \'pre-pre-agreement\'.'
+    output = analyzer(test_sentence)
+    assert 'pre-pre-agreement' in output
+
 
 def test_end_of_string():
     analyzer = Analyzer(test_corpus_config).preprocess
