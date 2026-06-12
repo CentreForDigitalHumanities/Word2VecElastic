@@ -35,6 +35,14 @@ def test_hyphen_exception():
     assert 'anti' in output
     assert 'anti-war' in output
 
+
+def test_double_hyphen_exception():
+    analyzer = Analyzer(test_corpus_config).preprocess
+    test_sentence = 'These policies are ultra-neo-liberal.'
+    output = analyzer(test_sentence)
+    assert 'ultra-neo-liberal' in output
+
+
 def test_end_of_string():
     analyzer = Analyzer(test_corpus_config).preprocess
     test_sentence = 'Most commerce is currently e'

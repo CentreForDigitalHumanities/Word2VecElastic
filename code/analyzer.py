@@ -1,5 +1,6 @@
 import logging
 import spacy
+from typing import Iterable, Tuple
 
 from util import CorpusConfigurationException
 
@@ -29,29 +30,41 @@ class Analyzer(object):
     def preprocess(self, input_string):
         # apply analysis pipeline
         doc = self.nlp(input_string)
-        # there are some prefixes that indicate we don't want hyphen splitting
-        exceptions = ['anti', 'e', 'extra', 'inter', 'neo', 'non', 'post', 'pre', 'pro', 'ultra']
-        # first, check that the prefixes are indeed connected with a hyphen
-        prefixes = [
-            pref for pref in exceptions if '{}-'.format(pref) in input_string.lower()
-        ]
-        if len(prefixes):
-            # get all indices where a potential hyphenated prefix could be located
-            # e.g., 'We do not support neo-liberalism' -> index would be -3
-            # as we merge at least three tokens, drop indices after -3
-            word_indices = [
-                token.i for token in doc[:-3] if token.text.lower() in prefixes
-            ]
-            with doc.retokenize() as retokenizer:
-                for index in word_indices:
-                    if doc[index+1].text == '-':
-                        try:
-                            retokenizer.merge(doc[index:index+3])
-                        except Exception:
-                            logger.error(f'{input_string} {doc[index:index+3]}')
-                            continue
+        self._merge_prefixes(doc)
         output = [self.select_token(token).lower() for token in doc if self.select_token(token)]
         return output
+
+
+    def _merge_prefixes(self, doc):
+        '''
+        Merge some prefixes where we do not want hyphen splitting
+        '''
+        spans = list(self._spans_to_merge(doc))
+        if spans:
+            with doc.retokenize() as retokenizer:
+                for start, end in spans:
+                    print(start, end)
+                    try:
+                        retokenizer.merge(doc[start:end])
+                    except Exception as e:
+                        logger.error('Could not merge %s (Sentence: %s)', doc[start:end], doc)
+                        continue
+
+
+    def _spans_to_merge(self, doc) -> Iterable[Tuple[int, int]]:
+        exceptions = ['anti', 'e', 'extra', 'inter', 'neo', 'non', 'post', 'pre', 'pro', 'ultra']
+        is_prefix = lambda token: \
+            token.i < len(doc) - 3 and \
+            token.lower_ in exceptions and \
+            doc[token.i + 1].lower_ == '-'
+
+        for token in doc:
+            if is_prefix(token):
+                next = doc[token.i + 2]
+                while is_prefix(next):
+                    next = doc[next.i + 2]
+                yield token.i, next.i + 1
+
 
     def select_token(self, token):
         exclude_conditions = [
