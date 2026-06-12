@@ -149,10 +149,10 @@ class DataCollector():
             try:
                 docs = es.search(
                     index=self.index,
-                    body=search_body,
                     size=1000,
                     scroll="60m",
                     track_total_hits=True,
+                    **search_body,
                 )
             except Exception as e:
                 logger.warning(e)
@@ -172,7 +172,12 @@ class DataCollector():
             except Exception as e:
                 logger.warning(e)
                 time.sleep(10)
-                docs = es.search(index=self.index, body=search_body, size=1000, scroll="60m")
+                docs = es.search(
+                    index=self.index,
+                    size=1000,
+                    scroll="60m",
+                    **search_body,
+                )
                 content = self._get_content(docs)
                 continue
             content.extend(self._get_content(docs))
