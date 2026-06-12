@@ -42,7 +42,7 @@ def test_double_hyphen_exception():
     output = analyzer(test_sentence)
     assert 'ultra-neo-liberal' in output
 
-    test_sentence = 'This agreement is a kind of \'pre-pre-agreement\'.'
+    test_sentence = "In fact, this agreement is a kind of 'pre-pre-agreement'."
     output = analyzer(test_sentence)
     assert 'pre-pre-agreement' in output
 

@@ -1,6 +1,6 @@
 import logging
 import spacy
-from typing import Iterable, Tuple
+from spacy.util import filter_spans
 
 from util import CorpusConfigurationException
 
@@ -39,19 +39,18 @@ class Analyzer(object):
         '''
         Merge some prefixes where we do not want hyphen splitting
         '''
-        spans = list(self._spans_to_merge(doc))
+        spans = filter_spans(self._spans_to_merge(doc))
         if spans:
             with doc.retokenize() as retokenizer:
-                for start, end in spans:
+                for span in spans:
                     try:
-                        retokenizer.merge(doc[start:end])
+                        retokenizer.merge(span)
                     except Exception as e:
-                        logger.error('Could not merge %s (Sentence: %s)', doc[start:end], doc, exc_info=True)
-                        logger.info(str(spans))
+                        logger.error('Could not merge %s (Sentence: %s)', span, doc, exc_info=True)
                         continue
 
 
-    def _spans_to_merge(self, doc) -> Iterable[Tuple[int, int]]:
+    def _spans_to_merge(self, doc):
         exceptions = ['anti', 'e', 'extra', 'inter', 'neo', 'non', 'post', 'pre', 'pro', 'ultra']
         is_prefix = lambda token: \
             token.i < len(doc) - 3 and \
@@ -63,7 +62,7 @@ class Analyzer(object):
                 next = doc[token.i + 2]
                 while is_prefix(next):
                     next = doc[next.i + 2]
-                yield token.i, next.i + 1
+                yield doc[token.i : next.i + 1]
 
 
     def select_token(self, token):
