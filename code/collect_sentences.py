@@ -47,8 +47,11 @@ class ESCollector():
         start_year: int,
         end_year: int,
     ):
+        self.corpus_name = corpus_name
         self.corpus_config = CORPUS_CONFIGURATIONS.get(corpus_name)
         self.index = os.environ.get('INDEX', corpus_name)
+        if self.index != self.corpus_name:
+            logger.info('Overriding index from environment: %s', self.index)
         if not es.indices.exists(index=self.index):
             raise CorpusConfigurationException(
                 f'The index {self.index} does not exist. Specify a correct name through your environment.'
