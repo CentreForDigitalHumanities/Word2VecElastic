@@ -133,7 +133,6 @@ class DataCollector():
             return None
         sentences = []
         for doc in docs:
-            logger.info(doc)
             if doc:
                 doc_tok = self.tokenize_sentences(doc)
                 if doc_tok:
@@ -162,6 +161,8 @@ class DataCollector():
         if not docs:
             return None
         content = self._get_content(docs)
+        logger.info(docs)
+        logger.info(content)
         total_hits = docs['hits']['total']['value']
         if total_hits == 0:
             es.clear_scroll(scroll_id=docs['_scroll_id'])
