@@ -48,7 +48,7 @@ class Analyzer(object):
                         try:
                             retokenizer.merge(doc[index:index+3])
                         except Exception:
-                            logger.error(input_string, doc[index:index+3])
+                            logger.error(f'{input_string} {doc[index:index+3]}')
                             continue
         output = [self.select_token(token).lower() for token in doc if self.select_token(token)]
         return output
