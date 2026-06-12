@@ -152,7 +152,7 @@ def generate_models(
         logger.info('Building model: '+ model_name)
         sentences = list(DataCollector(corpus, start, end, analyzer, source_directory))
         if algorithm == 'word2vec':
-            initial = full_model_path if independent else None
+            initial = full_model_path if not independent else None
             model, n_tokens = train_word2vec(sentences, corpus_config, initial)
         elif algorithm == 'ppmi':
             model, n_tokens = train_ppmi(
