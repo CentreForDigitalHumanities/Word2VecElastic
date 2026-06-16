@@ -59,14 +59,15 @@ CORPUS_CONFIGURATIONS = {
     },
     'parliament-uk': {'language': 'english', 'text_field': 'speech', 'min_count': 80},
     'troonredes': {
-        'algorithm': 'ppmi',
         'language': 'dutch',
         'text_field': 'content',
-        'min_count': 80,
+        'date_field': 'date',
+        'min_count': 10,
     },
     'parliament-europe': {
         'language': 'english',
         'text_field': 'speech',
-        'min_count': 10,
+        'date_field': 'date',
+        'min_count': 80,
     }
 }

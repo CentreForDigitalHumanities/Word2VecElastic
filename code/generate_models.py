@@ -16,14 +16,12 @@ from sklearn.feature_extraction.text import CountVectorizer
 
 from collect_sentences import DataCollector
 from corpus_config import CORPUS_CONFIGURATIONS
-from analyzer import Analyzer
 from util import check_path, CorpusConfigurationException
 import ppmi
 
 import logging
+
 logger = logging.getLogger(__name__)
-logger.level = logging.INFO
-logger.addHandler(logging.FileHandler('models.log'))
 
 
 MIN_COUNT = 80
@@ -92,6 +90,10 @@ def generate_models(
         - its word vectors (gensim KeyedVectors) ('*start-end.wv')
     The statistics are saved to the model folder as a .csv
     """
+    logging.basicConfig(
+        filename='models.log', level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S'
+    )
+
     logger.info('generate_models started at ' + str(datetime.now()))
     check_path(model_directory)
     corpus_config = CORPUS_CONFIGURATIONS.get(corpus)
@@ -117,7 +119,6 @@ def generate_models(
         raise CorpusConfigurationException(
             f"The following keys are invalid: {', '.join(invalid_keys)}"
         )
-    analyzer = Analyzer(corpus_config).preprocess
     algorithm = corpus_config.get('algorithm', 'word2vec')
     independent = corpus_config.get('independent', True)
     full_model_name = '{}_{}_{}_full'.format(corpus, start_year, end_year)
@@ -125,7 +126,7 @@ def generate_models(
     full_model_path = join(model_directory, full_model_file)
     if not os.path.exists(full_model_path) and not independent:
         # skip this step when training independent models
-        sentences = DataCollector(corpus, start_year, end_year, analyzer, source_directory)
+        sentences = DataCollector(corpus, start_year, end_year, source_directory)
         if algorithm == 'word2vec':
             model, _tokens = train_word2vec(sentences, corpus_config)
             model.save(full_model_path)
@@ -147,9 +148,9 @@ def generate_models(
         end = year + n_years
         model_name = '{}_{}_{}.wv'.format(corpus, start, end)
         logger.info('Building model: '+ model_name)
-        sentences = list(DataCollector(corpus, start, end, analyzer, source_directory))
+        sentences = list(DataCollector(corpus, start, end, source_directory))
         if algorithm == 'word2vec':
-            initial = full_model_path if independent else None
+            initial = full_model_path if not independent else None
             model, n_tokens = train_word2vec(sentences, corpus_config, initial)
         elif algorithm == 'ppmi':
             model, n_tokens = train_ppmi(
@@ -207,7 +208,7 @@ def get_model(sentences, min_count: int, window_size: int, vector_size: int, max
         max_final_vocab=max_final_vocab
     )
     model.build_vocab(sentences)
-    logger.info('Vocab size:', len(model.wv))
+    logger.info(f'Built vocabulary, size = {len(model.wv)}')
     return model
 
 
