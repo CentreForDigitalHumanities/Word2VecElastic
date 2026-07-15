@@ -1,0 +1,24 @@
+run_config:
+  corpus_name: 'test-corpus'
+  
+  corpus_settings:
+      algorithm:        'word2vec'
+      date_field:       true
+      independent:      true
+      language:         'english'
+      lemmatize:        false
+      min_count:        80
+      max_vocab:        null
+      max_final_vocab:  null
+      text_field:       'content'
+      vector_size:      100
+      window_size:      5
+  
+  args:
+    corpus:           'test-corpus'
+    start_year:       1980
+    end_year:         1990
+    n_years:          10
+    model_directory:  'path/to/model'
+    source_directory: 'path/to/source'
+
