@@ -122,19 +122,6 @@ def generate_models(
             f"The following keys are invalid: {', '.join(invalid_keys)}"
         )
 
-    write_run_output(
-        model_directory,
-        corpus,
-        corpus_config,
-        start_year,
-        end_year,
-        n_years,
-        model_directory,
-        source_directory,
-        started_at=started_at,
-        completed_at=None,
-    )
-
     algorithm = corpus_config.get('algorithm', 'word2vec')
     independent = corpus_config.get('independent', True)
     full_model_name = '{}_{}_{}_full'.format(corpus, start_year, end_year)
@@ -153,18 +140,6 @@ def generate_models(
         else:
             logger.error(
                 'unknown training algorithm specified, choose `word2vec` or `ppmi`')
-            write_run_output(
-                model_directory,
-                corpus,
-                corpus_config,
-                start_year,
-                end_year,
-                n_years,
-                model_directory,
-                source_directory,
-                started_at=started_at,
-                completed_at=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-            )
             return
         model.wv.save(
             join(model_directory, '{}.wv'.format(full_model_name))
