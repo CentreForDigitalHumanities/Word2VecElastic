@@ -6,6 +6,7 @@ import csv
 from os.path import join
 import os
 from datetime import datetime
+from typing import Dict, Optional
 
 import click
 import yaml
@@ -288,18 +289,18 @@ def converted_vectors_to_model(converted_vectors):
 
 
 def write_run_output(
-    model_directory,
-    corpus,
-    corpus_config,
-    start_year,
-    end_year,
-    n_years,
-    run_model_directory,
-    run_model_name,
-    source_directory,
-    started_at=None,
-    completed_at=None,
-):
+    model_directory: str,
+    corpus: str,
+    corpus_config: Dict,
+    start_year: int,
+    end_year: int,
+    n_years: int,
+    run_model_directory: str,
+    run_model_name: str,
+    source_directory: str,
+    started_at: Optional[str] = None,
+    completed_at: Optional[str] = None,
+) -> None:
     output_data = {
         'run_config': {
             'corpus_name': corpus,
