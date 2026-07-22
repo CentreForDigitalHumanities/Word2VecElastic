@@ -30,9 +30,6 @@ N_DIMS = 100
 WINDOW_SIZE = 5
 
 
-RUN_OUTPUT_FILE = 'run_output.yml'
-
-
 @click.command()
 @click.option(
     '-c', '--corpus', help="Name of the corpus configuration object", required=True
@@ -190,18 +187,6 @@ def generate_models(
         else:
             logger.error(
                 'unknown training algorithm specified, choose `word2vec` or `ppmi`')
-            write_run_output(
-                model_directory,
-                corpus,
-                corpus_config,
-                start_year,
-                end_year,
-                n_years,
-                model_directory,
-                source_directory,
-                started_at=started_at,
-                completed_at=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-            )
             return
         logger.info('Model trained: ' + model_name)
         saved_vectors, n_terms, n_tokens = get_vectors_and_stats(
@@ -227,6 +212,7 @@ def generate_models(
         end_year,
         n_years,
         model_directory,
+        full_model_name,
         source_directory,
         started_at=started_at,
         completed_at=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
@@ -334,6 +320,7 @@ def write_run_output(
     end_year,
     n_years,
     run_model_directory,
+    run_model_name,
     source_directory,
     started_at=None,
     completed_at=None,
@@ -367,7 +354,7 @@ def write_run_output(
         }
     }
 
-    output_path = join(model_directory, RUN_OUTPUT_FILE)
+    output_path = join(model_directory, f'{run_model_name}_config.yml')
     with open(output_path, 'w+') as f:
         yaml.safe_dump(output_data, f, sort_keys=False)
     logger.info('Run output file written: ' + output_path)
