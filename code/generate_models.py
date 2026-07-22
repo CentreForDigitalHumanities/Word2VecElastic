@@ -8,6 +8,7 @@ import os
 from datetime import datetime
 
 import click
+import yaml
 from gensim.models.word2vec import Word2Vec
 from gensim.models import KeyedVectors
 from gensim.scripts.glove2word2vec import glove2word2vec
@@ -27,6 +28,9 @@ logger = logging.getLogger(__name__)
 MIN_COUNT = 80
 N_DIMS = 100
 WINDOW_SIZE = 5
+
+
+RUN_OUTPUT_FILE = 'run_output.yml'
 
 
 @click.command()
@@ -94,7 +98,8 @@ def generate_models(
         filename='models.log', level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S'
     )
 
-    logger.info('generate_models started at ' + str(datetime.now()))
+    started_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    logger.info('generate_models started at ' + started_at)
     check_path(model_directory)
     corpus_config = CORPUS_CONFIGURATIONS.get(corpus)
     if not corpus_config:
@@ -119,6 +124,20 @@ def generate_models(
         raise CorpusConfigurationException(
             f"The following keys are invalid: {', '.join(invalid_keys)}"
         )
+
+    write_run_output(
+        model_directory,
+        corpus,
+        corpus_config,
+        start_year,
+        end_year,
+        n_years,
+        model_directory,
+        source_directory,
+        started_at=started_at,
+        completed_at=None,
+    )
+
     algorithm = corpus_config.get('algorithm', 'word2vec')
     independent = corpus_config.get('independent', True)
     full_model_name = '{}_{}_{}_full'.format(corpus, start_year, end_year)
@@ -137,6 +156,18 @@ def generate_models(
         else:
             logger.error(
                 'unknown training algorithm specified, choose `word2vec` or `ppmi`')
+            write_run_output(
+                model_directory,
+                corpus,
+                corpus_config,
+                start_year,
+                end_year,
+                n_years,
+                model_directory,
+                source_directory,
+                started_at=started_at,
+                completed_at=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            )
             return
         model.wv.save(
             join(model_directory, '{}.wv'.format(full_model_name))
@@ -159,6 +190,18 @@ def generate_models(
         else:
             logger.error(
                 'unknown training algorithm specified, choose `word2vec` or `ppmi`')
+            write_run_output(
+                model_directory,
+                corpus,
+                corpus_config,
+                start_year,
+                end_year,
+                n_years,
+                model_directory,
+                source_directory,
+                started_at=started_at,
+                completed_at=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            )
             return
         logger.info('Model trained: ' + model_name)
         saved_vectors, n_terms, n_tokens = get_vectors_and_stats(
@@ -175,6 +218,19 @@ def generate_models(
         writer = csv.DictWriter(f, fieldnames=('time', 'n_tokens', 'n_terms'))
         writer.writeheader()
         writer.writerows(stats)
+
+    write_run_output(
+        model_directory,
+        corpus,
+        corpus_config,
+        start_year,
+        end_year,
+        n_years,
+        model_directory,
+        source_directory,
+        started_at=started_at,
+        completed_at=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+    )
 
 
 def train_word2vec(sentences, corpus_config, initial_model_path=None):
@@ -268,6 +324,53 @@ def converted_vectors_to_model(converted_vectors):
     _ = glove2word2vec(tmp_glove, tmp_word2vec)
     model = KeyedVectors.load_word2vec_format(tmp_word2vec)
     return model
+
+
+def write_run_output(
+    model_directory,
+    corpus,
+    corpus_config,
+    start_year,
+    end_year,
+    n_years,
+    run_model_directory,
+    source_directory,
+    started_at=None,
+    completed_at=None,
+):
+    output_data = {
+        'run_config': {
+            'corpus_name': corpus,
+            'started_at': started_at,
+            'completed_at': completed_at,
+            'corpus_settings': {
+                'algorithm': corpus_config.get('algorithm', 'word2vec'),
+                'date_field': corpus_config.get('date_field', True),
+                'independent': corpus_config.get('independent', True),
+                'language': corpus_config.get('language'),
+                'lemmatize': corpus_config.get('lemmatize', False),
+                'min_count': corpus_config.get('min_count', MIN_COUNT),
+                'max_vocab': corpus_config.get('max_vocab'),
+                'max_final_vocab': corpus_config.get('max_final_vocab'),
+                'text_field': corpus_config.get('text_field'),
+                'vector_size': corpus_config.get('vector_size', N_DIMS),
+                'window_size': corpus_config.get('window_size', WINDOW_SIZE),
+            },
+            'args': {
+                'corpus': corpus,
+                'start_year': start_year,
+                'end_year': end_year,
+                'n_years': n_years,
+                'model_directory': run_model_directory,
+                'source_directory': source_directory,
+            },
+        }
+    }
+
+    output_path = join(model_directory, RUN_OUTPUT_FILE)
+    with open(output_path, 'w+') as f:
+        yaml.safe_dump(output_data, f, sort_keys=False)
+    logger.info('Run output file written: ' + output_path)
 
 if __name__ == '__main__':
     generate_models()

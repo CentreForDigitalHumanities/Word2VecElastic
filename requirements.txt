@@ -97,6 +97,8 @@ pydantic==2.11.3
     #   weasel
 pydantic-core==2.33.1
     # via pydantic
+pyyaml==6.0.2
+    # via -r requirements.in
 pygments==2.19.1
     # via rich
 pytest==8.3.5
