@@ -57,7 +57,16 @@ CORPUS_CONFIGURATIONS = {
         'text_field': 'speech',
         'min_count': 80,
     },
-    'parliament-uk': {'language': 'english', 'text_field': 'speech', 'min_count': 80},
+    'parliament-uk': {
+        'language': 'english', 
+        'text_field': 'speech', 
+        'min_count': 80,
+    },
+    'parliament-uk-merged': {
+        'language': 'english',
+        'text_field': 'speech',
+        'min_count': 80,
+    },
     'troonredes': {
         'language': 'dutch',
         'text_field': 'content',
