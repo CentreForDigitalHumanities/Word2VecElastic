@@ -5,6 +5,7 @@ one of the models spans a given number of years.
 import csv
 from os.path import join
 import os
+from datetime import datetime
 
 import click
 from gensim.models.word2vec import Word2Vec
@@ -15,14 +16,13 @@ from sklearn.feature_extraction.text import CountVectorizer
 
 from collect_sentences import DataCollector
 from corpus_config import CORPUS_CONFIGURATIONS
-from analyzer import Analyzer
 from util import check_path, CorpusConfigurationException
 import ppmi
 
 import logging
-logging.basicConfig(filename='models.log', level=logging.WARNING, filemode='a', datefmt='%Y-%m-%d %H:%M:%S', 
-    format='%(asctime)s %(levelname)-8s %(message)s')
+
 logger = logging.getLogger(__name__)
+
 
 MIN_COUNT = 80
 N_DIMS = 100
@@ -90,6 +90,11 @@ def generate_models(
         - its word vectors (gensim KeyedVectors) ('*start-end.wv')
     The statistics are saved to the model folder as a .csv
     """
+    logging.basicConfig(
+        filename='models.log', level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S'
+    )
+
+    logger.info('generate_models started at ' + str(datetime.now()))
     check_path(model_directory)
     corpus_config = CORPUS_CONFIGURATIONS.get(corpus)
     if not corpus_config:
@@ -114,26 +119,17 @@ def generate_models(
         raise CorpusConfigurationException(
             f"The following keys are invalid: {', '.join(invalid_keys)}"
         )
-    analyzer = Analyzer(corpus_config).preprocess
     algorithm = corpus_config.get('algorithm', 'word2vec')
     independent = corpus_config.get('independent', True)
-    sentences = DataCollector(corpus, start_year, end_year, analyzer, source_directory)
     full_model_name = '{}_{}_{}_full'.format(corpus, start_year, end_year)
     full_model_file = '{}.model'.format(full_model_name)
-    if not os.path.exists(join(model_directory, full_model_file)) and not independent:
+    full_model_path = join(model_directory, full_model_file)
+    if not os.path.exists(full_model_path) and not independent:
         # skip this step when training independent models
+        sentences = DataCollector(corpus, start_year, end_year, source_directory)
         if algorithm == 'word2vec':
-            model = get_model(
-                sentences,
-                corpus_config.get('min_count'),
-                corpus_config.get('window_size', WINDOW_SIZE),
-                corpus_config.get('vector_size', N_DIMS),
-                corpus_config.get('max_vocab_size'),
-                corpus_config.get('max_final_vocab')
-            )
-            model.train(sentences, total_examples=model.corpus_count,
-                        epochs=model.epochs)
-            model.save(join(model_directory, full_model_file))
+            model, _tokens = train_word2vec(sentences, corpus_config)
+            model.save(full_model_path)
         elif algorithm == 'ppmi':
             model = train_ppmi(
                 list(sentences), corpus_config.get('vector_size', N_DIMS)
@@ -152,29 +148,19 @@ def generate_models(
         end = year + n_years
         model_name = '{}_{}_{}.wv'.format(corpus, start, end)
         logger.info('Building model: '+ model_name)
-        sentences = DataCollector(corpus, start, end, analyzer, source_directory)
+        sentences = list(DataCollector(corpus, start, end, source_directory))
         if algorithm == 'word2vec':
-            if independent:
-                model = get_model(
-                    sentences,
-                    corpus_config.get('min_count', MIN_COUNT),
-                    corpus_config.get('window_size', WINDOW_SIZE),
-                    corpus_config.get('vector_size', N_DIMS),
-                    corpus_config.get('max_vocab_size'),
-                    corpus_config.get('max_final_vocab')
-                )
-            else:
-                model = Word2Vec.load(join(model_directory, full_model_file))
-            _output, n_tokens = model.train(sentences, start_alpha=.05,
-                        total_examples=len(list(sentences)), epochs=model.epochs)
+            initial = full_model_path if not independent else None
+            model, n_tokens = train_word2vec(sentences, corpus_config, initial)
         elif algorithm == 'ppmi':
             model, n_tokens = train_ppmi(
-                list(sentences), corpus_config.get('vector_size', N_DIMS)
+                sentences, corpus_config.get('vector_size', N_DIMS)
             )
         else:
             logger.error(
                 'unknown training algorithm specified, choose `word2vec` or `ppmi`')
             return
+        logger.info('Model trained: ' + model_name)
         saved_vectors, n_terms, n_tokens = get_vectors_and_stats(
             model, sentences, n_tokens, independent
         )
@@ -183,11 +169,33 @@ def generate_models(
             'n_tokens': n_tokens,
             'n_terms': n_terms})
         saved_vectors.save(join(model_directory, model_name))
+        logger.info('Model saved: ' + model_name)
 
     with open(join(model_directory, '{}_stats.csv'.format(full_model_name)), 'w+') as f:
         writer = csv.DictWriter(f, fieldnames=('time', 'n_tokens', 'n_terms'))
         writer.writeheader()
         writer.writerows(stats)
+
+
+def train_word2vec(sentences, corpus_config, initial_model_path=None):
+    if initial_model_path:
+        model = Word2Vec.load(initial_model_path)
+        start_alpha = .05
+    else:
+        model = get_model(
+            sentences,
+            corpus_config.get('min_count', MIN_COUNT),
+            corpus_config.get('window_size', WINDOW_SIZE),
+            corpus_config.get('vector_size', N_DIMS),
+            corpus_config.get('max_vocab_size'),
+            corpus_config.get('max_final_vocab')
+        )
+        start_alpha = None
+
+    _output, n_tokens = model.train(
+        sentences, start_alpha=start_alpha, total_examples=len(sentences), epochs=model.epochs
+    )
+    return model, n_tokens
 
 
 def get_model(sentences, min_count: int, window_size: int, vector_size: int, max_vocab_size: int, max_final_vocab: int):
@@ -200,6 +208,7 @@ def get_model(sentences, min_count: int, window_size: int, vector_size: int, max
         max_final_vocab=max_final_vocab
     )
     model.build_vocab(sentences)
+    logger.info(f'Built vocabulary, size = {len(model.wv)}')
     return model
 
 
