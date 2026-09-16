@@ -62,7 +62,7 @@ Optional settings are:
 # Usage
 To train models, with activated environment, use the command
 ```
-python generate_models.py -i your-index-name -s 1960 -e 2000 -md /path/to/output/models
+python generate_models.py -c your-index-name -s 1960 -e 2000 -md /path/to/output/models
 ```
 Meaning of the flags:
 - c: name of the corpus
