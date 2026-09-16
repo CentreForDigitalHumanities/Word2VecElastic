@@ -9,3 +9,4 @@ config.py
 /test
 .env/
 .env
+.venv
