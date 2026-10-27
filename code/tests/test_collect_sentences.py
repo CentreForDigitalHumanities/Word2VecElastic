@@ -2,6 +2,7 @@ import tempfile
 import pytest
 
 from collect_sentences import es, DataCollector, ESCollector, time
+from corpus_config import CORPUS_CONFIGURATIONS
 from .test_corpus_config import mock_index_exists
 
 n_years = 5
@@ -77,6 +78,24 @@ def test_get_content_missing_values(monkeypatch, search_result):
     docs = collector._get_content(search_result)
     assert len(docs) == 4
     assert docs[1] == ""
+
+
+def test_get_date_range_default(monkeypatch):
+    monkeypatch.setattr(es.indices, 'exists', mock_index_exists)
+    # default year_start_date
+    collector = ESCollector('parliament-europe', 1999, 1999)
+    assert collector.get_date_range() == ('1999-01-01', '1999-12-31')
+    collector = ESCollector('parliament-europe', 1999, 2001)
+    assert collector.get_date_range() == ('1999-01-01', '2001-12-31')
+    
+    # offset year_start_date
+    monkeypatch.setitem(CORPUS_CONFIGURATIONS['parliament-europe'], 'year_start_date', '07-01')
+    collector = ESCollector('parliament-europe', 1999, 1999)
+    assert collector.get_date_range() == ('1999-07-01', '2000-06-30')
+
+    # multiple years
+    collector = ESCollector('parliament-europe', 1999, 2001)
+    assert collector.get_date_range() == ('1999-07-01', '2002-06-30')
 
 
 

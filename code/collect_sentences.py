@@ -131,7 +131,7 @@ class ESCollector():
 
 
     def get_date_range(self) -> Tuple[str, str]:
-        '''For a single year, determine the date range, starting on `year_start_date` and ending one year minus one day later'''
+        '''Determine the date range, starting on `year_start_date` of `start_year` and ending the day before `year_start_date` of the year after `end_year`'''
         full_date = datetime.strptime(self.year_start_date, '%m-%d')
         month, day = full_date.month, full_date.day
         min_date = date(self.start_year, month, day)
