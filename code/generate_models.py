@@ -113,6 +113,7 @@ def generate_models(
         'text_field',
         'vector_size',
         'window_size',
+        'year_start_date',
     ]
     invalid_keys = set(corpus_config.keys()) - set(valid_keys)
     if invalid_keys:
