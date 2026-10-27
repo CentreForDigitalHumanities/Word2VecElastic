@@ -2,5 +2,6 @@ elasticsearch
 gensim
 nltk
 pytest
+pyyaml
 scikit-learn
 spacy
