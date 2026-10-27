@@ -6,8 +6,10 @@ import csv
 from os.path import join
 import os
 from datetime import datetime
+from typing import Dict, Optional
 
 import click
+import yaml
 from gensim.models.word2vec import Word2Vec
 from gensim.models import KeyedVectors
 from gensim.scripts.glove2word2vec import glove2word2vec
@@ -94,7 +96,8 @@ def generate_models(
         filename='models.log', level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S'
     )
 
-    logger.info('generate_models started at ' + str(datetime.now()))
+    started_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    logger.info('generate_models started at ' + started_at)
     check_path(model_directory)
     corpus_config = CORPUS_CONFIGURATIONS.get(corpus)
     if not corpus_config:
@@ -119,6 +122,7 @@ def generate_models(
         raise CorpusConfigurationException(
             f"The following keys are invalid: {', '.join(invalid_keys)}"
         )
+
     algorithm = corpus_config.get('algorithm', 'word2vec')
     independent = corpus_config.get('independent', True)
     full_model_name = '{}_{}_{}_full'.format(corpus, start_year, end_year)
@@ -175,6 +179,20 @@ def generate_models(
         writer = csv.DictWriter(f, fieldnames=('time', 'n_tokens', 'n_terms'))
         writer.writeheader()
         writer.writerows(stats)
+
+    write_run_output(
+        model_directory,
+        corpus,
+        corpus_config,
+        start_year,
+        end_year,
+        n_years,
+        model_directory,
+        full_model_name,
+        source_directory,
+        started_at=started_at,
+        completed_at=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+    )
 
 
 def train_word2vec(sentences, corpus_config, initial_model_path=None):
@@ -268,6 +286,54 @@ def converted_vectors_to_model(converted_vectors):
     _ = glove2word2vec(tmp_glove, tmp_word2vec)
     model = KeyedVectors.load_word2vec_format(tmp_word2vec)
     return model
+
+
+def write_run_output(
+    model_directory: str,
+    corpus: str,
+    corpus_config: Dict,
+    start_year: int,
+    end_year: int,
+    n_years: int,
+    run_model_directory: str,
+    run_model_name: str,
+    source_directory: str,
+    started_at: Optional[str] = None,
+    completed_at: Optional[str] = None,
+) -> None:
+    output_data = {
+        'run_config': {
+            'corpus_name': corpus,
+            'started_at': started_at,
+            'completed_at': completed_at,
+            'corpus_settings': {
+                'algorithm': corpus_config.get('algorithm', 'word2vec'),
+                'date_field': corpus_config.get('date_field', True),
+                'independent': corpus_config.get('independent', True),
+                'language': corpus_config.get('language'),
+                'lemmatize': corpus_config.get('lemmatize', False),
+                'min_count': corpus_config.get('min_count', MIN_COUNT),
+                'max_vocab': corpus_config.get('max_vocab'),
+                'max_final_vocab': corpus_config.get('max_final_vocab'),
+                'text_field': corpus_config.get('text_field'),
+                'vector_size': corpus_config.get('vector_size', N_DIMS),
+                'window_size': corpus_config.get('window_size', WINDOW_SIZE),
+            },
+            'args': {
+                'corpus': corpus,
+                'start_year': start_year,
+                'end_year': end_year,
+                'n_years': n_years,
+                'model_directory': run_model_directory,
+                'source_directory': source_directory,
+            },
+        }
+    }
+
+    output_path = join(model_directory, f'{run_model_name}_config.yml')
+    with open(output_path, 'w+') as f:
+        yaml.safe_dump(output_data, f, sort_keys=False)
+    logger.info('Run output file written: ' + output_path)
 
 if __name__ == '__main__':
     generate_models()
