@@ -30,7 +30,6 @@ MIN_COUNT = 80
 N_DIMS = 100
 WINDOW_SIZE = 5
 
-
 @click.command()
 @click.option(
     '-c', '--corpus', help="Name of the corpus configuration object", required=True
@@ -319,6 +318,7 @@ def write_run_output(
                 'text_field': corpus_config.get('text_field'),
                 'vector_size': corpus_config.get('vector_size', N_DIMS),
                 'window_size': corpus_config.get('window_size', WINDOW_SIZE),
+                'year_start_date': corpus_config.get('year_start_date', '01-01')
             },
             'args': {
                 'corpus': corpus,
