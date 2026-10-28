@@ -69,5 +69,6 @@ CORPUS_CONFIGURATIONS = {
         'text_field': 'speech',
         'date_field': 'date',
         'min_count': 80,
+        'year_start_date': '07-01'
     }
 }

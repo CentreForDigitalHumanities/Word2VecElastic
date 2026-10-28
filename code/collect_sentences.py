@@ -1,7 +1,8 @@
 import pickle
 import os
 import time
-from typing import List, Dict
+from datetime import date, datetime, timedelta
+from typing import List, Dict, Tuple
 
 from elasticsearch import Elasticsearch
 from nltk.tokenize import PunktSentenceTokenizer
@@ -67,6 +68,13 @@ class ESCollector():
                 'The corpus configuration does not specify `date_field`, `date` will be used'
             )
         self.date_field = configured_date_field or 'date'
+        self.year_start_date = self.corpus_config.get('year_start_date', '01-01')
+        try:
+            datetime.strptime(self.year_start_date, '%m-%d')
+        except ValueError:
+            raise CorpusConfigurationException(
+                f'Invalid `year_start_date`, should be a valid month and day in the format MM-DD, got {self.year_start_date}'
+            )
         self.start_year = start_year
         self.end_year = end_year
 
@@ -122,9 +130,17 @@ class ESCollector():
         ]
 
 
+    def get_date_range(self) -> Tuple[str, str]:
+        '''Determine the date range, starting on `year_start_date` of `start_year` and ending the day before `year_start_date` of the year after `end_year`'''
+        full_date = datetime.strptime(self.year_start_date, '%m-%d')
+        month, day = full_date.month, full_date.day
+        min_date = date(self.start_year, month, day)
+        max_date = date(self.end_year + 1, month, day) - timedelta(days=1)
+        return min_date.isoformat(), max_date.isoformat()
+
+
     def get_es_body(self) -> Dict:
-        min_date = str(self.start_year)+"-01-01"
-        max_date = str(self.end_year)+"-12-31"
+        min_date, max_date = self.get_date_range()
         body = {
             "query": {
                 "bool": {

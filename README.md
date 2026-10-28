@@ -58,6 +58,7 @@ Optional settings are:
 - max_final_vocab: can be used to choose the `min_count` automatically to limit the final vocabulary to this size. Defaults to `None`.
 - vector_size: the number of dimensions of the resulting word vectors. Defaults to 100.
 - window_size: the size of the window around a target word for the word2vec algorithm. Defaults to 5.
+- year_start_date: the day (in MM-DD format) that marks the start of each year in the word model.  Defaults to 01-01.
 
 # Usage
 To train models, with activated environment, use the command
