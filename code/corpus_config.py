@@ -68,7 +68,7 @@ CORPUS_CONFIGURATIONS = {
         'language': 'english',
         'text_field': 'speech',
         'date_field': 'date',
-        'min_count': 80,
+        'min_count': 10,
         'year_start_date': '07-01'
     }
 }
